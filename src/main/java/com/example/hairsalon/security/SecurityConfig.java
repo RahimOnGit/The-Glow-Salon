@@ -1,10 +1,6 @@
 package com.example.hairsalon.security;
 
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.web.SecurityFilterChain;
-// SecurityConfig.java
+import org.springframework.boot.autoconfigure.security.servlet.PathRequest;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -23,20 +19,22 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
                 .authorizeHttpRequests(authorize -> authorize
-                        .requestMatchers("/login", "/css/**", "/js/**").permitAll() // Allow access to login and static files
-                        .anyRequest().authenticated() // All other requests need authentication
+                        .requestMatchers("/css/**", "/js/**", "/images/**").permitAll()
+                        .requestMatchers(PathRequest.toStaticResources().atCommonLocations()).permitAll()
+
+                        .requestMatchers("/", "/login", "/login-error", "/login-success", "/toggle").permitAll()
+                        .anyRequest().authenticated()
                 )
                 .formLogin(form -> form
-                        .loginPage("/login") // Custom login page URL
-                        .loginProcessingUrl("/login") // The URL the form will POST to
-                        .successForwardUrl("/home") // Forward to this URL on success
-                        .failureForwardUrl("/login-error") // Forward to this URL on failure
+                        .loginPage("/login")
+                        .loginProcessingUrl("/login") // Spring Security handles this
+                        .defaultSuccessUrl("/dashboard", true)
+                        .failureUrl("/login-error")
                         .permitAll()
-                );
+                )
+                .csrf(csrf -> csrf.disable());
         return http.build();
     }
-
-    // For demonstration: an in-memory user
     @Bean
     public UserDetailsService userDetailsService() {
         UserDetails user = User.withDefaultPasswordEncoder()

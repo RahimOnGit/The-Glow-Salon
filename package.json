@@ -1,0 +1,26 @@
+{
+  "name": "the-glow-salon",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/RahimOnGit/The-Glow-Salon.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/RahimOnGit/The-Glow-Salon/issues"
+  },
+  "homepage": "https://github.com/RahimOnGit/The-Glow-Salon#readme",
+  "description": "",
+  "devDependencies": {
+    "autoprefixer": "^10.4.21",
+    "daisyui": "^4.12.24",
+    "postcss": "^8.5.6",
+    "tailwindcss": "^3.4.18"
+  }
+}
