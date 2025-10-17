@@ -3,12 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <title>Login - The Glow Salon</title>
-    <link rel="stylesheet" th:href="@{/css/output.css}">
+
+    <!-- htmx and json-enc extension for sending form data as JSON -->
     <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+    <script src="https://unpkg.com/htmx.org/dist/ext/json-enc.js"></script>
+
     <!-- Tailwind CSS + DaisyUI CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdn.jsdelivr.net/npm/daisyui@4.12.10/dist/full.min.css" rel="stylesheet" type="text/css" />
-
 
 </head>
 <body class="min-h-screen bg-base-200 flex items-center justify-center">
@@ -17,17 +19,28 @@
     <div class="card-body">
         <h2 class="card-title justify-center text-2xl mb-4">Login to The Glow Salon</h2>
 
-        <div id="login-form" th:fragment="login-form">
-            <div th:if="${loginError}" class="alert alert-error mb-4">
-                <span>Invalid username or password.</span>
+        <div id="login-container">
+            <!-- Error message container -->
+            <div id="error-message" class="hidden alert alert-error mb-4">
+                <svg xmlns="http://www.w3.org/2000/svg" class="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                <span id="error-text"></span>
             </div>
 
-            <form action="/login" method="post">
+            <div th:if="${logoutMessage}" class="alert alert-success mb-4" id="logout-s-message">
+                <svg xmlns="http://www.w3.org/2000/svg" class="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <span th:text="${logoutMessage}"></span>
+            </div>
+
+            <!-- The form is updated to use htmx for JSON submission to the REST controller -->
+            <!--  Added hx-swap="none" to prevent the URL error by stopping htmx from performing a swap. -->
+            <form id="login-form" hx-post="/api/auth/login" hx-ext="json-enc" hx-trigger="submit" hx-swap="none">
                 <div class="form-control">
                     <label class="label">
-                        <span class="label-text">Username</span>
+                        <span class="label-text">Email</span>
                     </label>
-                    <input type="text" name="username" class="input input-bordered" required>
+                    <input type="text" name="email" class="input input-bordered" required>
                 </div>
 
                 <div class="form-control mt-4">
@@ -46,17 +59,79 @@
             <div class="text-center mt-4">
                 <p class="text-sm">
                     Don't have an account?
-               <a href="/register" class="link link-primary">Register</a>
+                    <a href="/register" class="link link-primary">Register</a>
                 </p>
             </div>
 
             <div class="text-center mt-4">
-                <p class="text-sm">Demo credentials: <strong>user / password</strong></p>
+                <p class="text-sm">Demo credentials: <strong>semo@gmail.com / 1234</strong></p>
             </div>
 
         </div>
     </div>
 </div>
+
+<script>
+
+    const errorDiv = document.getElementById('error-message');
+    const errorTextSpan = document.getElementById('error-text');
+    const logoutDiv = document.getElementById('logout-s-message');
+
+    // 1. Handle Successful Login (Status 200 OK)
+    document.getElementById('login-form').addEventListener('htmx:afterRequest', function (evt) {
+        if (evt.detail.successful && evt.detail.xhr.status === 200) {
+            try {
+                const response = JSON.parse(evt.detail.xhr.responseText);
+                const token = response.token;
+
+
+                localStorage.setItem('jwtToken', token);
+
+                // Redirect the user to the dashboard
+                window.location.href = '/dashboard';
+
+            } catch (e) {
+                console.error("Login Success Handler Error:", e);
+                errorTextSpan.textContent = 'Login succeeded, but failed to process token.';
+                errorDiv.classList.remove('hidden');
+            }
+        }
+    });
+
+    // 2. Handle Login Failure (Status 401 Unauthorized)
+    document.body.addEventListener('htmx:responseError', function (evt) {
+        let errorMessage = 'An unknown error occurred.';
+
+        try {
+            // The AuthController sends a JSON body with the error: {"error": "..."}
+            const errorJson = JSON.parse(evt.detail.xhr.responseText);
+            errorMessage = errorJson.error || errorMessage;
+
+        } catch (e) {
+            // Handle case where response is not JSON
+            errorMessage = "Login failed. Check server logs.";
+        }
+
+        errorTextSpan.textContent = errorMessage;
+        errorDiv.classList.remove('hidden');
+    });
+
+    // Clear the error message when user starts typing again
+    document.getElementById('login-form').addEventListener('input', function() {
+        if (!errorDiv.classList.contains('hidden')) {
+            errorDiv.classList.add('hidden');
+        }
+
+        if(!logoutDiv.classList.contains('hidden'))
+        {
+            logoutDiv.classList.add('hidden')
+        }
+    });
+
+
+
+
+</script>
 
 </body>
 </html>
