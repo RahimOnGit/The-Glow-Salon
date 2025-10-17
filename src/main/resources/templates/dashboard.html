@@ -12,10 +12,14 @@
 <body class="min-h-screen bg-base-200">
 <div class="navbar bg-base-100 shadow-lg">
   <div class="navbar-start">
-    <a class="btn btn-ghost text-xl">💇‍♀️ The Glow Salon</a>
+    <a class="btn btn-ghost text-xl">The Glow Salon</a>
   </div>
   <div class="navbar-end">
-    <a href="/logout" class="btn btn-ghost">Logout</a>
+
+    <form action="/logout" method="post" class="m-0">
+    <button type="submit" class="btn btn-ghost">Logout</button>
+    </form>
+
   </div>
 </div>
 
@@ -23,7 +27,7 @@
   <div class="hero-content text-center">
     <div class="max-w-md">
       <h1 class="text-4xl font-bold">Welcome to your Dashboard!</h1>
-      <p class="py-6">You have successfully logged in. ✅</p>
+      <p class="py-6">You have successfully logged in.</p>
       <a href="/" class="btn btn-primary">Back to Home</a>
     </div>
   </div>
