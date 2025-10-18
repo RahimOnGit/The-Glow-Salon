@@ -1,0 +1,102 @@
+<!--<!DOCTYPE html>-->
+<!--<html lang="en">-->
+<!--<head>-->
+<!--    <meta charset="UTF-8">-->
+<!--    <title>Title</title>-->
+<!--</head>-->
+<!--<body>-->
+
+<!--</body>-->
+<!--</html>-->
+
+<!DOCTYPE html>
+<html lang="en" data-theme="lofi">
+<head>
+    <meta charset="UTF-8">
+    <title>Register - The Glow Salon</title>
+    <link rel="stylesheet" href="/css/output.css">
+    <!-- htmx and json-enc extension for sending form data as JSON -->
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+    <script src="https://unpkg.com/htmx.org/dist/ext/json-enc.js"></script>
+
+    <!-- Tailwind CSS + DaisyUI CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/daisyui@4.12.10/dist/full.min.css" rel="stylesheet" type="text/css" />
+
+</head>
+<body class="min-h-screen bg-base-200 flex items-center justify-center">
+<div class="card w-96 bg-base-100 shadow-xl">
+    <div class="card-body">
+        <h2 class="card-title justify-center text-2xl mb-4">Register for The Glow Salon</h2>
+
+        <div id="register-error" class="alert alert-error mb-4 hidden">
+            <span id="error-message"></span>
+        </div>
+
+        <form id="register-form" hx-post="/api/auth/register" hx-target="#register-response" hx-swap="innerHTML">
+            <div class="form-control">
+                <label class="label">
+                    <span class="label-text">First Name</span>
+                </label>
+                <input type="text" name="firstName" placeholder="Enter first name" class="input input-bordered" required>
+            </div>
+
+            <div class="form-control mt-4">
+                <label class="label">
+                    <span class="label-text">Last Name</span>
+                </label>
+                <input type="text" name="lastName" placeholder="Enter last name" class="input input-bordered" required>
+            </div>
+
+            <div class="form-control mt-4">
+                <label class="label">
+                    <span class="label-text">Email</span>
+                </label>
+                <input type="email" name="email" placeholder="Enter email" class="input input-bordered" required>
+            </div>
+
+            <div class="form-control mt-4">
+                <label class="label">
+                    <span class="label-text">Phone</span>
+                </label>
+                <input type="tel" name="phone" placeholder="Enter phone" class="input input-bordered" required>
+            </div>
+
+            <div class="form-control mt-4">
+                <label class="label">
+                    <span class="label-text">Password</span>
+                </label>
+                <input type="password" name="password" placeholder="Enter password" class="input input-bordered" required>
+            </div>
+
+
+            <div class="form-control mt-6">
+                <button type="submit" class="btn btn-primary w-full">Register</button>
+            </div>
+        </form>
+
+        <div id="register-response"></div>
+
+        <div class="text-center mt-4">
+            <p class="text-sm">
+                Already have an account? <a href="/login" class="link link-primary">Login</a>
+            </p>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Handle API Response
+    document.body.addEventListener('htmx:afterRequest', function(e) {
+        if (e.detail.xhr.status === 200) {
+            const response = JSON.parse(e.detail.xhr.responseText);
+            localStorage.setItem('token', response.token);  // حفظ Token بعد التسجيل + دخول تلقائي
+            window.location.href = '/dashboard';
+        } else if (e.detail.xhr.status === 400 || e.detail.xhr.status === 500) {
+            document.getElementById('register-error').classList.remove('hidden');
+            document.getElementById('error-message').textContent = 'Registration failed: Invalid data or email exists';
+        }
+    });
+</script>
+</body>
+</html>
