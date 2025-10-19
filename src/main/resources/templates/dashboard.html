@@ -1,3 +1,55 @@
+<!--<!DOCTYPE html>-->
+<!--<html lang="en" xmlns:th="http://www.thymeleaf.org" data-theme="light">-->
+<!--<head>-->
+<!--  <meta charset="UTF-8">-->
+<!--  <title>Dashboard - The Glow Salon</title>-->
+<!--  &lt;!&ndash; Tailwind CSS + DaisyUI CDN &ndash;&gt;-->
+<!--  <script src="https://cdn.tailwindcss.com"></script>-->
+<!--  <link href="https://cdn.jsdelivr.net/npm/daisyui@4.12.10/dist/full.min.css" rel="stylesheet" type="text/css" />-->
+
+<!--  <link rel="stylesheet" href="/css/output.css">-->
+<!--</head>-->
+<!--<body class="min-h-screen bg-base-200">-->
+<!--<div class="navbar bg-base-100 shadow-lg">-->
+<!--  <div class="navbar-start">-->
+<!--    <a class="btn btn-ghost text-xl">The Glow Salon</a>-->
+<!--  </div>-->
+<!--  <div class="navbar-end">-->
+<!--    <span th:if="${user}" class="mr-4">Welcome, <span th:text="${user.firstName} + ' ' + ${user.lastName}"></span></span>-->
+<!--    <span th:unless="${user}" class="mr-4">Welcome, Guest</span>-->
+<!--    <form action="/logout" method="post" class="m-0">-->
+<!--      <button type="submit" class="btn btn-ghost">Logout</button>-->
+<!--    </form>-->
+<!--  </div>-->
+<!--</div>-->
+
+<!--<div class="hero min-h-screen bg-base-200">-->
+<!--  <div class="hero-content text-center">-->
+<!--    <div class="max-w-md">-->
+<!--      <h1 th:if="${user}" class="text-4xl font-bold">Welcome to your Dashboard, <span th:text="${user.firstName}"></span>!</h1>-->
+<!--      <h1 th:unless="${user}" class="text-4xl font-bold">Welcome to Dashboard!</h1>-->
+<!--      <p th:if="${user}" class="py-6">You have successfully logged in. Your visit count: <span th:text="${user.visitCount}"></span></p>-->
+<!--      <p th:unless="${user}" class="py-6">Please log in to view your details.</p>-->
+<!--      <div th:if="${user}" class="stats shadow mb-4">-->
+<!--        <div class="stat">-->
+<!--          <div class="stat-title">Email</div>-->
+<!--          <div class="stat-value" th:text="${user.email}"></div>-->
+<!--        </div>-->
+<!--        <div class="stat">-->
+<!--          <div class="stat-title">Phone</div>-->
+<!--          <div class="stat-value" th:text="${user.phone}"></div>-->
+<!--        </div>-->
+<!--      </div>-->
+<!--      <div class="join mb-4">-->
+<!--        <a href="/" class="btn btn-primary join-item">Back to Home</a>-->
+<!--        <a href="/appointments" class="btn btn-secondary join-item">Book Appointment</a>-->
+<!--      </div>-->
+<!--    </div>-->
+<!--  </div>-->
+<!--</div>-->
+<!--</body>-->
+<!--</html>-->
+
 <!DOCTYPE html>
 <html lang="en" data-theme="light">
 <head>
@@ -17,7 +69,7 @@
   <div class="navbar-end">
 
     <form action="/logout" method="post" class="m-0">
-    <button type="submit" class="btn btn-ghost">Logout</button>
+      <button type="submit" class="btn btn-ghost">Logout</button>
     </form>
 
   </div>

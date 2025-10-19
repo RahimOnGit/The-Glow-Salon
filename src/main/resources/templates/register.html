@@ -3,7 +3,6 @@
 <head>
     <meta charset="UTF-8">
     <title>Register - The Glow Salon</title>
-    <link rel="stylesheet" href="/css/output.css">
     <!-- htmx and json-enc extension for sending form data as JSON -->
     <script src="https://unpkg.com/htmx.org@1.9.10"></script>
     <script src="https://unpkg.com/htmx.org/dist/ext/json-enc.js"></script>
@@ -64,8 +63,6 @@
             </div>
         </form>
 
-        <div id="register-response"></div>
-
         <div class="text-center mt-4">
             <p class="text-sm">
                 Already have an account? <a href="/login" class="link link-primary">Login</a>
@@ -81,34 +78,18 @@
     // Handle API Response
     document.body.addEventListener('htmx:afterRequest', function(e) {
         if (e.detail.xhr.status === 200) {
-            // Registration succeeded - now auto-login by posting to /api/auth/login
-            const formData = new FormData(e.target);
-            const email = formData.get('email');
-            const password = formData.get('password');
-
-            htmx.ajax('POST', '/api/auth/login', {
-                values: { email, password },
-                headers: { 'Content-Type': 'application/json' },  // Ensure JSON for login too
-                target: '#register-response',
-                swap: 'none'
-            }).then(function(loginResponse) {
-                if (loginResponse.status === 200) {
-                    // Login succeeded - extract token from cookie or response, then redirect
-                    const token = document.cookie.split('; ').find(row => row.startsWith('jwt=')).split('=')[1];
-                    if (token) {
-                        localStorage.setItem('token', token);
-                    }
-                    window.location.href = '/dashboard';
-                } else {
-                    errorTextSpan.textContent = 'Registration succeeded, but login failed. Please log in manually.';
-                    errorDiv.classList.remove('hidden');
-                }
-            });
+            const response = JSON.parse(e.detail.xhr.responseText);
+            localStorage.setItem('token', response.token);
+            window.location.href = '/dashboard';
+        } else if (e.detail.xhr.status === 409) {
+            // Specific handling for email already exists
+            errorTextSpan.textContent = 'Email already exists. Please use a different email.';
+            errorDiv.classList.remove('hidden');
         } else if (e.detail.xhr.status === 400 || e.detail.xhr.status === 500) {
             try {
                 const errorJson = JSON.parse(e.detail.xhr.responseText);
                 const details = errorJson.details || {};
-                let errorMsg = errorJson.message || 'Registration failed';
+                let errorMsg = errorJson.error || 'Registration failed';
 
                 // If validation errors, show field-specific messages
                 if (Object.keys(details).length > 0) {

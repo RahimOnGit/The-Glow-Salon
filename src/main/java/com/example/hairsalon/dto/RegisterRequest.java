@@ -23,5 +23,6 @@ public class RegisterRequest {
     private String password;
 
 //    private String role = "USER";
+
     private String role = "customer";
 }

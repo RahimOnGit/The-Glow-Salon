@@ -1,6 +1,7 @@
 package com.example.hairsalon.service;
 
 
+import com.example.hairsalon.dto.RegisterRequest;
 import com.example.hairsalon.entity.User;
 import com.example.hairsalon.repository.UserRepository;
 import com.example.hairsalon.security.JwtUtils;
@@ -26,6 +27,53 @@ public class AuthService {
 
     @Autowired
     private JwtUtils jwtUtils;
+    public User register(RegisterRequest request) {
+        logger.debug("Attempting registration for email: {}", request.getEmail());
+
+        // Check if user already exists
+        Optional<User> existingUser = userRepository.findByEmail(request.getEmail());
+        if (existingUser.isPresent()) {
+            logger.warn("Registration failed: Email already exists {}", request.getEmail());
+            throw new RuntimeException("Email already exists");
+        }
+
+        // Create new user
+        User user = new User();
+        user.setFirstName(request.getFirstName());
+        user.setLastName(request.getLastName());
+        user.setEmail(request.getEmail());
+        user.setPhone(request.getPhone());
+        user.setPassword(passwordEncoder.encode(request.getPassword()));
+//        user.setRole(request.getRole() != null ? request.getRole() : "USER");
+        // visitCount defaults to 0 in entity
+
+        // Validate and set role: must be one of 'admin', 'employee', 'customer'. Default to 'customer'
+        String role = request.getRole();
+        if (role == null || (!role.equals("admin") && !role.equals("employee") && !role.equals("customer"))) {
+            role = "customer";
+        }
+        user.setRole(role);
+
+        // visitCount defaults to 0 in entity
+
+        User savedUser = userRepository.save(user);
+        logger.debug("User registered successfully: {}", savedUser.getEmail());
+
+        // Optionally increment visit count on registration (e.g., first visit)
+        savedUser.setVisitCount(1);
+        userRepository.save(savedUser);
+
+
+
+//        User savedUser = userRepository.save(user);
+//        logger.debug("User registered successfully: {}", savedUser.getEmail());
+//
+//        // Optionally increment visit count on registration (e.g., first visit)
+//        savedUser.setVisitCount(1);
+//        userRepository.save(savedUser);
+
+        return savedUser;
+    }
 
     public String login(String email, String password) {
         logger.debug("Attempting login for email: {}", email);
