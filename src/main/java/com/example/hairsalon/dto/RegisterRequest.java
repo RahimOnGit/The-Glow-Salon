@@ -22,5 +22,6 @@ public class RegisterRequest {
     @NotBlank
     private String password;
 
-    private String role = "USER";
+//    private String role = "USER";
+    private String role = "customer";
 }
