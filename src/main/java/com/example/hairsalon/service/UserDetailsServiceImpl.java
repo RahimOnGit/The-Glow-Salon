@@ -2,12 +2,12 @@ package com.example.hairsalon.service;
 
 import com.example.hairsalon.entity.User;
 import com.example.hairsalon.repository.UserRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -39,4 +39,3 @@ public class UserDetailsServiceImpl implements UserDetailsService {
                 .build();
     }
 }
-

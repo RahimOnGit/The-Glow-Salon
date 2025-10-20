@@ -1,13 +1,17 @@
 package com.example.hairsalon.controller;
 
+import com.example.hairsalon.dto.RegisterRequest;
+import com.example.hairsalon.entity.User;
 import com.example.hairsalon.service.AuthService;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.http.ResponseCookie;
-import org.springframework.http.HttpHeaders;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -18,6 +22,42 @@ public class AuthController {
 
     @Autowired
     private AuthService authService;
+
+    @PostMapping("/register")
+    public ResponseEntity<Map<String, Object>> register(@Valid @RequestBody RegisterRequest request) {
+        try {
+            User user = authService.register(request);
+            // Generate token for auto-login after registration
+            String token = authService.login(request.getEmail(), request.getPassword());
+
+            // Create HttpOnly cookie for the JWT
+            ResponseCookie jwtCookie = ResponseCookie.from("jwt", token)
+                    .httpOnly(true)
+                    .secure(false) // Set to true in production with HTTPS
+                    .path("/")
+                    .maxAge(7 * 24 * 60 * 60L) // 7 days
+                    .build();
+
+            Map<String, Object> response = Map.of(
+                    "user", user,
+                    "token", token,
+                    "message", "Registration and login successful"
+            );
+
+            return ResponseEntity.ok()
+                    .header(HttpHeaders.SET_COOKIE, jwtCookie.toString())
+                    .body(response);
+        } catch (RuntimeException e) {
+            // Handle specific runtime exceptions like "Email already exists"
+            if (e.getMessage().equals("Email already exists")) {
+                return ResponseEntity.status(HttpStatus.CONFLICT)
+                        .body(Map.of("error", "Email already exists   . Please use a different email."));
+            }
+            // For other runtime exceptions, return 500
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", "Registration failed. Please try again."));
+        }
+    }
 
     @PostMapping("/login")
     public ResponseEntity<Map<String, String>> login(@RequestBody Map<String, String> credentials) {
@@ -32,19 +72,18 @@ public class AuthController {
         try {
             // Calls the AuthService to validate credentials and generate JWT
             String token = authService.login(email, password);
-
             // Create an HttpOnly cookie for the JWT
             ResponseCookie jwtCookie = ResponseCookie.from("jwt", token)
                     .httpOnly(true)
                     .secure(false) // Set to true in production with HTTPS
                     .path("/")
-                    .maxAge(7 * 24 * 60 * 60) // 7 days
+                    .maxAge(7 * 24 * 60 * 60L) // 7 days
                     .build();
 
-            // Return success message with the cookie
+            // Return success message with the cookie and token in body for frontend
             return ResponseEntity.ok()
                     .header(HttpHeaders.SET_COOKIE, jwtCookie.toString())
-                    .body(Map.of("message", "Login successful"));
+                    .body(Map.of("message", "Login successful", "token", token));
 
         } catch (RuntimeException e) {
             // Catch authentication failure (e.g., Invalid email or password)
