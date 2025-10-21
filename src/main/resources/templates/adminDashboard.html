@@ -1,0 +1,1320 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>The Glow Salon - Admin Dashboard</title>
+
+  <!-- HTMX for dynamic updates -->
+  <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+  <script src="https://unpkg.com/htmx.org/dist/ext/json-enc.js"></script>
+
+  <!-- Tailwind CSS + DaisyUI -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://cdn.jsdelivr.net/npm/daisyui@4.12.10/dist/full.min.css" rel="stylesheet" type="text/css" />
+  <link rel="stylesheet" href="/css/output.css">
+
+  <style>
+    .stat-icon {
+      width: 48px;
+      height: 48px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 12px;
+      background: #f3f4f6;
+    }
+    .btn-black {
+      background-color: black;
+      color: white;
+    }
+    .btn-black:hover {
+      background-color: #333;
+    }
+
+    /* Custom styles for active tab */
+    .tabs .tab-active {
+      background-color: black !important;
+      color: white !important;
+    }
+
+  </style>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {}
+      },
+      plugins: []
+    }
+  </script>
+</head>
+<body class="min-h-screen bg-base-200">
+
+<!-- Navigation Bar -->
+<div class="navbar bg-base-100 shadow-lg sticky top-0 z-50">
+  <div class="navbar-start">
+    <div class="flex items-center gap-2">
+      <span class="text-2xl" style="filter: grayscale(100%);">✂️</span>
+      <a class="btn btn-ghost text-xl font-bold">The GLOW SALON</a>
+    </div>
+  </div>
+  <div class="navbar-center hidden lg:flex">
+    <ul class="menu menu-horizontal px-1">
+      <li><a href="/">Home</a></li>
+      <li><a href="/book">Book Now</a></li>
+      <li><a class="active">Dashboard</a></li>
+    </ul>
+  </div>
+  <div class="navbar-end gap-2">
+    <div class="dropdown dropdown-end lg:hidden">
+      <label tabindex="0" class="btn btn-ghost">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h8m-8 6h16" />
+        </svg>
+      </label>
+      <ul tabindex="0" class="menu menu-sm dropdown-content mt-3 z-[1] p-2 shadow bg-base-100 rounded-box w-52">
+        <li><a href="/">Home</a></li>
+        <li><a href="/book">Book Now</a></li>
+        <li><a>Dashboard</a></li>
+      </ul>
+    </div>
+    <form action="/logout" method="post" class="m-0">
+      <button type="submit" class="btn btn-ghost gap-2">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+          <polyline points="16 17 21 12 16 7"/>
+          <line x1="21" y1="12" x2="9" y2="12"/>
+        </svg>
+        Logout
+      </button>
+    </form>
+  </div>
+</div>
+
+<!-- Main Container -->
+<div class="container mx-auto px-4 py-8 max-w-7xl">
+
+  <!-- Page Header -->
+  <div class="mb-8">
+    <h1 class="text-4xl font-bold text-base-content mb-2">Admin Dashboard</h1>
+    <p class="text-base-content/70">Manage your salon operations</p>
+  </div>
+
+  <!-- Statistics Cards -->
+  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+    <!-- Locations Card -->
+    <div class="card bg-base-100 shadow-xl">
+      <div class="card-body">
+        <div class="flex items-center gap-3">
+          <div class="stat-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+              <circle cx="12" cy="10" r="3"/>
+            </svg>
+          </div>
+          <div>
+            <h2 class="card-title text-sm opacity-70">Locations</h2>
+            <p class="text-3xl font-bold" id="locations-count">0</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Employees Card -->
+    <div class="card bg-base-100 shadow-xl">
+      <div class="card-body">
+        <div class="flex items-center gap-3">
+          <div class="stat-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-secondary" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+              <circle cx="9" cy="7" r="4"/>
+              <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+              <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+            </svg>
+          </div>
+          <div>
+            <h2 class="card-title text-sm opacity-70">Employees</h2>
+            <p class="text-3xl font-bold" id="employees-count">0</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Today's Appointments Card -->
+    <div class="card bg-base-100 shadow-xl">
+      <div class="card-body">
+        <div class="flex items-center gap-3">
+          <div class="stat-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-accent" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+
+              <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+              <line x1="16" y1="2" x2="16" y2="6"/>
+              <line x1="8" y1="2" x2="8" y2="6"/>
+              <line x1="3" y1="10" x2="21" y2="10"/>
+            </svg>
+          </div>
+          <div>
+            <h2 class="card-title text-sm opacity-70">Today's Appointments</h2>
+            <p class="text-3xl font-bold" id="today-appointments-count">0</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Revenue Card -->
+    <div class="card bg-base-100 shadow-xl">
+      <div class="card-body">
+        <div class="flex items-center gap-3">
+          <div class="stat-icon">
+            <!--            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-success" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">-->
+            <span class="text-success text-xl font-bold">kr</span>
+            <line x1="12" y1="1" x2="12" y2="23"/>
+            <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+            </svg>
+          </div>
+          <div>
+            <h2 class="card-title text-sm opacity-70">Monthly Revenue</h2>
+            <p class="text-3xl font-bold" id="revenue">0 kr</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tabs Navigation -->
+  <div class="tabs tabs-boxed bg-base-100 shadow-lg mb-8 p-2">
+    <a class="tab" onclick="switchTab('locations')">Locations</a>
+    <a class="tab" onclick="switchTab('employees')">Employees</a>
+    <a class="tab tab-active" onclick="switchTab('services')">Services</a>
+    <a class="tab" onclick="switchTab('appointments')">Appointments</a>
+  </div>
+
+  <!-- Locations Management Section -->
+  <div id="locations-section" class="space-y-6 hidden">
+    <!-- Add Location Modal Button -->
+    <div class="flex justify-between items-center">
+      <h2 class="text-2xl font-bold">Manage Locations</h2>
+      <label for="add-location-modal" class="btn btn-black gap-2">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="12" y1="5" x2="12" y2="19"/>
+          <line x1="5" y1="12" x2="19" y2="12"/>
+        </svg>
+        Add Location
+      </label>
+    </div>
+
+    <!-- Locations Table Card -->
+    <div class="card bg-base-100 shadow-xl">
+      <div class="card-body">
+        <div id="locations-table" class="overflow-x-auto">
+          <!-- Locations will be loaded here via HTMX -->
+          <div class="flex justify-center py-8">
+            <span class="loading loading-spinner loading-lg"></span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Employees Management Section -->
+  <div id="employees-section" class="space-y-6 hidden">
+    <!-- Add Employee Modal Button -->
+    <div class="flex justify-between items-center">
+      <h2 class="text-2xl font-bold">Manage Employees</h2>
+      <label for="add-employee-modal" class="btn btn-black gap-2">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="12" y1="5" x2="12" y2="19"/>
+          <line x1="5" y1="12" x2="19" y2="12"/>
+        </svg>
+        Add Employee
+      </label>
+    </div>
+
+    <!-- Employees Table Card -->
+    <div class="card bg-base-100 shadow-xl">
+      <div class="card-body">
+        <div id="employees-table" class="overflow-x-auto">
+          <!-- Employees will be loaded here via HTMX -->
+          <div class="flex justify-center py-8">
+            <span class="loading loading-spinner loading-lg"></span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Services Management Section -->
+  <div id="services-section" class="space-y-6">
+    <!-- Add Service Modal Button -->
+    <div class="flex justify-between items-center">
+      <h2 class="text-2xl font-bold">Manage Services</h2>
+      <label for="add-service-modal" class="btn btn-black gap-2">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="12" y1="5" x2="12" y2="19"/>
+          <line x1="5" y1="12" x2="19" y2="12"/>
+        </svg>
+        Add Service
+      </label>
+    </div>
+
+    <!-- Services Table Card -->
+    <div class="card bg-base-100 shadow-xl">
+      <div class="card-body">
+        <div id="services-table" class="overflow-x-auto">
+          <!-- Services will be loaded here via HTMX -->
+          <div class="flex justify-center py-8">
+            <span class="loading loading-spinner loading-lg"></span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Appointments Management Section -->
+  <div id="appointments-section" class="space-y-6 hidden">
+    <!-- Add Appointment Modal Button -->
+    <div class="flex justify-between items-center">
+      <h2 class="text-2xl font-bold">Manage Appointments</h2>
+      <label for="add-appointment-modal" class="btn btn-black gap-2">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="12" y1="5" x2="12" y2="19"/>
+          <line x1="5" y1="12" x2="19" y2="12"/>
+        </svg>
+        Add Appointment
+      </label>
+    </div>
+
+    <!-- Appointments Table Card -->
+    <div class="card bg-base-100 shadow-xl">
+      <div class="card-body">
+        <div id="appointments-table" class="overflow-x-auto">
+          <!-- Appointments will be loaded here via HTMX -->
+          <div class="flex justify-center py-8">
+            <span class="loading loading-spinner loading-lg"></span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Add Location Modal -->
+<input type="checkbox" id="add-location-modal" class="modal-toggle" />
+<div class="modal">
+  <div class="modal-box w-11/12 max-w-2xl">
+    <label for="add-location-modal" class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2">✕</label>
+    <h3 class="font-bold text-2xl mb-4">Add New Location</h3>
+
+    <form id="add-location-form" hx-post="/api/locations" hx-ext="json-enc" hx-swap="none" class="space-y-4">
+      <div class="form-control">
+        <label class="label">
+          <span class="label-text font-semibold">Name</span>
+        </label>
+        <input type="text" name="name" placeholder="e.g., Downtown Branch" class="input input-bordered w-full" required>
+      </div>
+
+      <div class="form-control">
+        <label class="label">
+          <span class="label-text font-semibold">Address</span>
+        </label>
+        <input type="text" name="address" placeholder="Full address" class="input input-bordered w-full" required>
+      </div>
+
+      <div class="form-control">
+        <label class="label">
+          <span class="label-text font-semibold">City</span>
+        </label>
+        <input type="text" name="city" placeholder="City name" class="input input-bordered w-full" required>
+      </div>
+
+      <div class="form-control">
+        <label class="label">
+          <span class="label-text font-semibold">Phone</span>
+        </label>
+        <input type="tel" name="phone" placeholder="+1-234-567-8900" class="input input-bordered w-full" required>
+      </div>
+
+      <div class="modal-action">
+        <label for="add-location-modal" class="btn btn-ghost">Cancel</label>
+        <button type="submit" class="btn btn-black">Add Location</button>
+      </div>
+    </form>
+  </div>
+  <label class="modal-backdrop" for="add-location-modal">Close</label>
+</div>
+
+<!-- Edit Location Modal -->
+<input type="checkbox" id="edit-location-modal" class="modal-toggle" />
+<div class="modal">
+  <div class="modal-box w-11/12 max-w-2xl">
+    <label for="edit-location-modal" class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2">✕</label>
+    <h3 class="font-bold text-2xl mb-4">Edit Location</h3>
+
+    <form id="edit-location-form" hx-ext="json-enc" hx-swap="none" class="space-y-4">
+      <input type="hidden" id="edit-location-id" name="locationId">
+
+      <div class="form-control">
+        <label class="label">
+          <span class="label-text font-semibold">Name</span>
+        </label>
+        <input type="text" id="edit-location-name" name="name" class="input input-bordered w-full" required>
+      </div>
+
+      <div class="form-control">
+        <label class="label">
+          <span class="label-text font-semibold">Address</span>
+        </label>
+        <input type="text" id="edit-location-address" name="address" class="input input-bordered w-full" required>
+      </div>
+
+      <div class="form-control">
+        <label class="label">
+          <span class="label-text font-semibold">City</span>
+        </label>
+        <input type="text" id="edit-location-city" name="city" class="input input-bordered w-full" required>
+      </div>
+
+      <div class="form-control">
+        <label class="label">
+          <span class="label-text font-semibold">Phone</span>
+        </label>
+        <input type="tel" id="edit-location-phone" name="phone" class="input input-bordered w-full" required>
+      </div>
+
+      <div class="modal-action">
+        <label for="edit-location-modal" class="btn btn-ghost">Cancel</label>
+        <button type="submit" class="btn btn-primary">Update Location</button>
+      </div>
+    </form>
+  </div>
+  <label class="modal-backdrop" for="edit-location-modal">Close</label>
+</div>
+
+<!-- Add Employee Modal -->
+<input type="checkbox" id="add-employee-modal" class="modal-toggle" />
+<div class="modal">
+  <div class="modal-box w-11/12 max-w-2xl">
+    <label for="add-employee-modal" class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2">✕</label>
+    <h3 class="font-bold text-2xl mb-4">Add New Employee</h3>
+
+    <form id="add-employee-form" hx-post="/api/employees" hx-ext="json-enc" hx-swap="none" class="space-y-4">
+      <div class="form-control">
+        <label class="label">
+          <span class="label-text font-semibold">First Name</span>
+        </label>
+        <input type="text" name="firstName" placeholder="First name" class="input input-bordered w-full" required>
+      </div>
+
+      <div class="form-control">
+        <label class="label">
+          <span class="label-text font-semibold">Last Name</span>
+        </label>
+        <input type="text" name="lastName" placeholder="Last name" class="input input-bordered w-full" required>
+      </div>
+
+      <div class="form-control">
+        <label class="label">
+          <span class="label-text font-semibold">Phone</span>
+        </label>
+        <input type="tel" name="phone" placeholder="+1-234-567-8900" class="input input-bordered w-full" required>
+      </div>
+
+      <div class="form-control">
+        <label class="label">
+          <span class="label-text font-semibold">Location</span>
+        </label>
+        <select name="locationId" id="add-employee-location" class="select select-bordered w-full" required>
+          <option value="">Select Location</option>
+        </select>
+      </div>
+
+      <div class="modal-action">
+        <label for="add-employee-modal" class="btn btn-ghost">Cancel</label>
+        <button type="submit" class="btn btn-black">Add Employee</button>
+      </div>
+    </form>
+  </div>
+  <label class="modal-backdrop" for="add-employee-modal">Close</label>
+</div>
+
+<!-- Edit Employee Modal -->
+<input type="checkbox" id="edit-employee-modal" class="modal-toggle" />
+<div class="modal">
+  <div class="modal-box w-11/12 max-w-2xl">
+    <label for="edit-employee-modal" class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2">✕</label>
+    <h3 class="font-bold text-2xl mb-4">Edit Employee</h3>
+
+    <form id="edit-employee-form" hx-ext="json-enc" hx-swap="none" class="space-y-4">
+      <input type="hidden" id="edit-employee-id" name="employeeId">
+
+      <div class="form-control">
+        <label class="label">
+          <span class="label-text font-semibold">First Name</span>
+        </label>
+        <input type="text" id="edit-employee-firstName" name="firstName" class="input input-bordered w-full" required>
+      </div>
+
+      <div class="form-control">
+        <label class="label">
+          <span class="label-text font-semibold">Last Name</span>
+        </label>
+        <input type="text" id="edit-employee-lastName" name="lastName" class="input input-bordered w-full" required>
+      </div>
+
+      <div class="form-control">
+        <label class="label">
+          <span class="label-text font-semibold">Phone</span>
+        </label>
+        <input type="tel" id="edit-employee-phone" name="phone" class="input input-bordered w-full" required>
+      </div>
+
+      <div class="form-control">
+        <label class="label">
+          <span class="label-text font-semibold">Location</span>
+        </label>
+        <select id="edit-employee-location" name="locationId" class="select select-bordered w-full" required>
+          <option value="">Select Location</option>
+        </select>
+      </div>
+
+      <div class="modal-action">
+        <label for="edit-employee-modal" class="btn btn-ghost">Cancel</label>
+        <button type="submit" class="btn btn-primary">Update Employee</button>
+      </div>
+    </form>
+  </div>
+  <label class="modal-backdrop" for="edit-employee-modal">Close</label>
+</div>
+
+<!-- Add Service Modal -->
+<input type="checkbox" id="add-service-modal" class="modal-toggle" />
+<div class="modal">
+  <div class="modal-box w-11/12 max-w-2xl">
+    <label for="add-service-modal" class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2">✕</label>
+    <h3 class="font-bold text-2xl mb-4">Add New Service</h3>
+
+    <form id="add-service-form" hx-post="/api/services" hx-ext="json-enc" hx-swap="none" class="space-y-4">
+      <div class="form-control">
+        <label class="label">
+          <span class="label-text font-semibold">Service Name</span>
+        </label>
+        <input type="text" name="name" placeholder="e.g., Haircut, Hair Coloring" class="input input-bordered w-full" required>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div class="form-control">
+          <label class="label">
+            <span class="label-text font-semibold">Duration (minutes)</span>
+          </label>
+          <input type="number" name="duration" placeholder="30" class="input input-bordered w-full" required min="1">
+        </div>
+
+        <div class="form-control">
+          <label class="label">
+            <span class="label-text font-semibold">Price (kr)</span>
+          </label>
+          <input type="number" step="0.01" name="price" placeholder="45.00" class="input input-bordered w-full" required min="0">
+        </div>
+      </div>
+
+      <div class="modal-action">
+        <label for="add-service-modal" class="btn btn-ghost">Cancel</label>
+        <button type="submit" class="btn btn-black">Add Service</button>
+      </div>
+    </form>
+  </div>
+  <label class="modal-backdrop" for="add-service-modal">Close</label>
+</div>
+
+<!-- Edit Service Modal -->
+<input type="checkbox" id="edit-service-modal" class="modal-toggle" />
+<div class="modal">
+  <div class="modal-box w-11/12 max-w-2xl">
+    <label for="edit-service-modal" class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2">✕</label>
+    <h3 class="font-bold text-2xl mb-4">Edit Service</h3>
+
+    <form id="edit-service-form" hx-ext="json-enc" hx-swap="none" class="space-y-4">
+      <input type="hidden" id="edit-service-id" name="serviceId">
+
+      <div class="form-control">
+        <label class="label">
+          <span class="label-text font-semibold">Service Name</span>
+        </label>
+        <input type="text" id="edit-service-name" name="name" class="input input-bordered w-full" required>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div class="form-control">
+          <label class="label">
+            <span class="label-text font-semibold">Duration (minutes)</span>
+          </label>
+          <input type="number" id="edit-service-duration" name="duration" class="input input-bordered w-full" required min="1">
+        </div>
+
+        <div class="form-control">
+          <label class="label">
+            <span class="label-text font-semibold">Price (kr)</span>
+          </label>
+          <input type="number" step="0.01" id="edit-service-price" name="price" class="input input-bordered w-full" required min="0">
+        </div>
+      </div>
+
+      <div class="modal-action">
+        <label for="edit-service-modal" class="btn btn-ghost">Cancel</label>
+        <button type="submit" class="btn btn-black">Update Service</button>
+      </div>
+    </form>
+  </div>
+  <label class="modal-backdrop" for="edit-service-modal">Close</label>
+</div>
+
+<!-- Add Appointment Modal -->
+<input type="checkbox" id="add-appointment-modal" class="modal-toggle" />
+<div class="modal">
+  <div class="modal-box w-11/12 max-w-4xl">
+    <label for="add-appointment-modal" class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2">✕</label>
+    <h3 class="font-bold text-2xl mb-4">Add New Appointment</h3>
+
+    <form id="add-appointment-form" hx-post="/api/appointments" hx-ext="json-enc" hx-swap="none" class="space-y-4">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div class="form-control">
+          <label class="label">
+            <span class="label-text font-semibold">User</span>
+          </label>
+          <select name="userId" id="add-appointment-user" class="select select-bordered w-full" required>
+            <option value="">Select User</option>
+          </select>
+        </div>
+
+        <div class="form-control">
+          <label class="label">
+            <span class="label-text font-semibold">Employee</span>
+          </label>
+          <select name="employeeId" id="add-appointment-employee" class="select select-bordered w-full" required>
+            <option value="">Select Employee</option>
+          </select>
+        </div>
+
+        <div class="form-control">
+          <label class="label">
+            <span class="label-text font-semibold">Service</span>
+          </label>
+          <select name="serviceId" id="add-appointment-service" class="select select-bordered w-full" required>
+            <option value="">Select Service</option>
+          </select>
+        </div>
+
+        <div class="form-control">
+          <label class="label">
+            <span class="label-text font-semibold">Location</span>
+          </label>
+          <select name="locationId" id="add-appointment-location" class="select select-bordered w-full" required>
+            <option value="">Select Location</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div class="form-control">
+          <label class="label">
+            <span class="label-text font-semibold">Date</span>
+          </label>
+          <input type="date" name="date" class="input input-bordered w-full" required>
+        </div>
+
+        <div class="form-control">
+          <label class="label">
+            <span class="label-text font-semibold">Time</span>
+          </label>
+          <input type="time" name="time" class="input input-bordered w-full" required>
+        </div>
+
+        <div class="form-control">
+          <label class="label">
+            <span class="label-text font-semibold">Status</span>
+          </label>
+          <select name="status" class="select select-bordered w-full" required>
+            <option value="pending">Pending</option>
+            <option value="confirmed">Confirmed</option>
+            <option value="completed">Completed</option>
+            <option value="cancelled">Cancelled</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="modal-action">
+        <label for="add-appointment-modal" class="btn btn-ghost">Cancel</label>
+        <button type="submit" class="btn btn-black">Add Appointment</button>
+      </div>
+    </form>
+  </div>
+  <label class="modal-backdrop" for="add-appointment-modal">Close</label>
+</div>
+
+<!-- Edit Appointment Modal -->
+<input type="checkbox" id="edit-appointment-modal" class="modal-toggle" />
+<div class="modal">
+  <div class="modal-box w-11/12 max-w-4xl">
+    <label for="edit-appointment-modal" class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2">✕</label>
+    <h3 class="font-bold text-2xl mb-4">Edit Appointment</h3>
+
+    <form id="edit-appointment-form" hx-ext="json-enc" hx-swap="none" class="space-y-4">
+      <input type="hidden" id="edit-appointment-id" name="appointmentId">
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div class="form-control">
+          <label class="label">
+            <span class="label-text font-semibold">User</span>
+          </label>
+          <select id="edit-appointment-user" name="userId" class="select select-bordered w-full" required>
+            <option value="">Select User</option>
+          </select>
+        </div>
+
+        <div class="form-control">
+          <label class="label">
+            <span class="label-text font-semibold">Employee</span>
+          </label>
+          <select id="edit-appointment-employee" name="employeeId" class="select select-bordered w-full" required>
+            <option value="">Select Employee</option>
+          </select>
+        </div>
+
+        <div class="form-control">
+          <label class="label">
+            <span class="label-text font-semibold">Service</span>
+          </label>
+          <select id="edit-appointment-service" name="serviceId" class="select select-bordered w-full" required>
+            <option value="">Select Service</option>
+          </select>
+        </div>
+
+        <div class="form-control">
+          <label class="label">
+            <span class="label-text font-semibold">Location</span>
+          </label>
+          <select id="edit-appointment-location" name="locationId" class="select select-bordered w-full" required>
+            <option value="">Select Location</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div class="form-control">
+          <label class="label">
+            <span class="label-text font-semibold">Date</span>
+          </label>
+          <input type="date" id="edit-appointment-date" name="date" class="input input-bordered w-full" required>
+        </div>
+
+        <div class="form-control">
+          <label class="label">
+            <span class="label-text font-semibold">Time</span>
+          </label>
+          <input type="time" id="edit-appointment-time" name="time" class="input input-bordered w-full" required>
+        </div>
+
+        <div class="form-control">
+          <label class="label">
+            <span class="label-text font-semibold">Status</span>
+          </label>
+          <select id="edit-appointment-status" name="status" class="select select-bordered w-full" required>
+            <option value="pending">Pending</option>
+            <option value="confirmed">Confirmed</option>
+            <option value="completed">Completed</option>
+            <option value="cancelled">Cancelled</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="modal-action">
+        <label for="edit-appointment-modal" class="btn btn-ghost">Cancel</label>
+        <button type="submit" class="btn btn-primary">Update Appointment</button>
+      </div>
+    </form>
+  </div>
+  <label class="modal-backdrop" for="edit-appointment-modal">Close</label>
+</div>
+
+<script>
+  let locations = [];
+  let employees = [];
+  let services = [];
+  let users = [];
+
+  // Load initial data
+  document.addEventListener('DOMContentLoaded', function() {
+    loadStats();
+    loadLocations();
+    loadEmployees();
+    loadServices();
+    loadUsers();
+    loadAppointments();
+    populateDropdowns();
+  });
+
+  // Load stats
+  function loadStats() {
+    // Assuming endpoints for stats
+    fetch('/api/stats/locations/count').then(r => r.json()).then(data => document.getElementById('locations-count').textContent = data.count || 0);
+    fetch('/api/stats/employees/count').then(r => r.json()).then(data => document.getElementById('employees-count').textContent = data.count || 0);
+    fetch('/api/stats/appointments/today/count').then(r => r.json()).then(data => document.getElementById('today-appointments-count').textContent = data.count || 0);
+    fetch('/api/stats/revenue/monthly').then(r => r.json()).then(data => document.getElementById('revenue').textContent = `${data.total || 0} kr`);
+  }
+
+  // Load locations
+  function loadLocations() {
+    htmx.ajax('GET', '/api/locations', {
+      target: '#locations-table',
+      swap: 'innerHTML'
+    });
+  }
+
+  // Render locations table
+  document.body.addEventListener('htmx:afterRequest', function(evt) {
+    if (evt.detail.requestConfig.path === '/api/locations' && evt.detail.xhr.status === 200) {
+      try {
+        locations = JSON.parse(evt.detail.xhr.responseText);
+        renderLocationsTable(locations);
+        populateLocationDropdowns();
+      } catch (e) {
+        console.error('Failed to parse locations JSON:', e);
+      }
+    }
+  });
+
+  function renderLocationsTable(locations) {
+    if (locations.length === 0) {
+      document.getElementById('locations-table').innerHTML = `
+        <div class="text-center py-8">
+          <p class="text-base-content/70 mb-4">No locations found</p>
+          <label for="add-location-modal" class="btn btn-primary">Add Your First Location</label>
+        </div>
+      `;
+      return;
+    }
+
+    let tableHtml = `
+      <table class="table table-zebra w-full">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Address</th>
+            <th>City</th>
+            <th>Phone</th>
+            <th class="text-right">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+    `;
+
+    locations.forEach(location => {
+      tableHtml += `
+        <tr>
+          <td class="font-medium">${location.name}</td>
+          <td>${location.address}</td>
+          <td>${location.city}</td>
+          <td>${location.phone}</td>
+          <td class="text-right">
+            <div class="flex gap-2 justify-end">
+              <button class="btn btn-sm btn-ghost" onclick="editLocation(${location.locationId}, '${location.name}', '${location.address}', '${location.city}', '${location.phone}')">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                  <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                </svg>
+              </button>
+              <button class="btn btn-sm btn-ghost text-error" onclick="confirmDeleteLocation(${location.locationId}, '${location.name}')">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="3 6 5 6 21 6"/>
+                  <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                </svg>
+              </button>
+            </div>
+          </td>
+        </tr>
+      `;
+    });
+
+    tableHtml += `</tbody></table>`;
+    document.getElementById('locations-table').innerHTML = tableHtml;
+  }
+
+  function editLocation(id, name, address, city, phone) {
+    document.getElementById('edit-location-id').value = id;
+    document.getElementById('edit-location-name').value = name;
+    document.getElementById('edit-location-address').value = address;
+    document.getElementById('edit-location-city').value = city;
+    document.getElementById('edit-location-phone').value = phone;
+
+    const form = document.getElementById('edit-location-form');
+    form.setAttribute('hx-put', `/api/locations/${id}`);
+    htmx.process(form);
+
+    document.getElementById('edit-location-modal').checked = true;
+  }
+
+  function confirmDeleteLocation(id, name) {
+    if (confirm(`Are you sure you want to delete "${name}"?`)) {
+      htmx.ajax('DELETE', `/api/locations/${id}`, {
+        target: '#locations-table',
+        swap: 'none'
+      });
+    }
+  }
+
+  // Employees
+  function loadEmployees() {
+    htmx.ajax('GET', '/api/employees', {
+      target: '#employees-table',
+      swap: 'innerHTML'
+    });
+  }
+
+  document.body.addEventListener('htmx:afterRequest', function(evt) {
+    if (evt.detail.requestConfig.path === '/api/employees' && evt.detail.xhr.status === 200) {
+      try {
+        employees = JSON.parse(evt.detail.xhr.responseText);
+        renderEmployeesTable(employees);
+      } catch (e) {
+        console.error('Failed to parse employees JSON:', e);
+      }
+    }
+  });
+
+  function renderEmployeesTable(employees) {
+    if (employees.length === 0) {
+      document.getElementById('employees-table').innerHTML = `
+        <div class="text-center py-8">
+          <p class="text-base-content/70 mb-4">No employees found</p>
+          <label for="add-employee-modal" class="btn btn-primary">Add Your First Employee</label>
+        </div>
+      `;
+      return;
+    }
+
+    let tableHtml = `
+      <table class="table table-zebra w-full">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Phone</th>
+            <th>Location</th>
+            <th class="text-right">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+    `;
+
+    employees.forEach(emp => {
+      const locationName = locations.find(l => l.locationId == emp.locationId)?.name || 'Unknown';
+      tableHtml += `
+        <tr>
+          <td class="font-medium">${emp.firstName} ${emp.lastName}</td>
+          <td>${emp.phone}</td>
+          <td>${locationName}</td>
+          <td class="text-right">
+            <div class="flex gap-2 justify-end">
+              <button class="btn btn-sm btn-ghost" onclick="editEmployee(${emp.employeeId}, '${emp.firstName}', '${emp.lastName}', '${emp.phone}', ${emp.locationId})">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                  <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                </svg>
+              </button>
+              <button class="btn btn-sm btn-ghost text-error" onclick="confirmDeleteEmployee(${emp.employeeId}, '${emp.firstName} ${emp.lastName}')">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="3 6 5 6 21 6"/>
+                  <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                </svg>
+              </button>
+            </div>
+          </td>
+        </tr>
+      `;
+    });
+
+    tableHtml += `</tbody></table>`;
+    document.getElementById('employees-table').innerHTML = tableHtml;
+  }
+
+  function editEmployee(id, firstName, lastName, phone, locationId) {
+    document.getElementById('edit-employee-id').value = id;
+    document.getElementById('edit-employee-firstName').value = firstName;
+    document.getElementById('edit-employee-lastName').value = lastName;
+    document.getElementById('edit-employee-phone').value = phone;
+    document.getElementById('edit-employee-location').value = locationId;
+
+    const form = document.getElementById('edit-employee-form');
+    form.setAttribute('hx-put', `/api/employees/${id}`);
+    htmx.process(form);
+
+    document.getElementById('edit-employee-modal').checked = true;
+  }
+
+  function confirmDeleteEmployee(id, name) {
+    if (confirm(`Are you sure you want to delete "${name}"?`)) {
+      htmx.ajax('DELETE', `/api/employees/${id}`, {
+        target: '#employees-table',
+        swap: 'none'
+      });
+    }
+  }
+
+  // Services (existing)
+  function loadServices() {
+    htmx.ajax('GET', '/api/services', {
+      target: '#services-table',
+      swap: 'innerHTML'
+    });
+  }
+
+  document.body.addEventListener('htmx:afterRequest', function(evt) {
+    if (evt.detail.requestConfig.path === '/api/services' && evt.detail.xhr.status === 200) {
+      try {
+        services = JSON.parse(evt.detail.xhr.responseText);
+        renderServicesTable(services);
+        populateServiceDropdowns();
+      } catch (e) {
+        console.error('Failed to parse services JSON:', e);
+        document.getElementById('services-table').innerHTML =
+                '<div class="alert alert-error"><span>Failed to load services.</span></div>';
+      }
+    }
+  });
+
+  function renderServicesTable(services) {
+    if (services.length === 0) {
+      document.getElementById('services-table').innerHTML = `
+        <div class="text-center py-8">
+          <p class="text-base-content/70 mb-4">No services found</p>
+          <label for="add-service-modal" class="btn btn-black">Add Your First Service</label>
+        </div>
+      `;
+      return;
+    }
+
+    let tableHtml = `
+      <table class="table table-zebra w-full">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Duration</th>
+            <th>Price</th>
+            <th class="text-right">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+    `;
+
+    services.forEach(service => {
+      tableHtml += `
+        <tr>
+          <td class="font-medium">${service.name}</td>
+          <td>${service.duration} min</td>
+          <td class="font-semibold">${service.price.toFixed(2)} kr</td>
+          <td class="text-right">
+            <div class="flex gap-2 justify-end">
+              <button class="btn btn-sm btn-ghost" onclick="editService(${service.serviceId}, '${service.name}', ${service.duration}, ${service.price})">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                  <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                </svg>
+              </button>
+              <button class="btn btn-sm btn-ghost text-error" onclick="confirmDeleteService(${service.serviceId}, '${service.name}')">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="3 6 5 6 21 6"/>
+                  <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                </svg>
+              </button>
+            </div>
+          </td>
+        </tr>
+      `;
+    });
+
+    tableHtml += `</tbody></table>`;
+    document.getElementById('services-table').innerHTML = tableHtml;
+  }
+
+  function editService(id, name, duration, price) {
+    document.getElementById('edit-service-id').value = id;
+    document.getElementById('edit-service-name').value = name;
+    document.getElementById('edit-service-duration').value = duration;
+    document.getElementById('edit-service-price').value = price;
+
+    const form = document.getElementById('edit-service-form');
+    form.setAttribute('hx-put', `/api/services/${id}`);
+    htmx.process(form);
+
+    document.getElementById('edit-service-modal').checked = true;
+  }
+
+  function confirmDeleteService(id, name) {
+    if (confirm(`Are you sure you want to delete "${name}"?`)) {
+      htmx.ajax('DELETE', `/api/services/${id}`, {
+        target: '#services-table',
+        swap: 'none'
+      });
+    }
+  }
+
+  // Appointments
+  function loadAppointments() {
+    htmx.ajax('GET', '/api/appointments', {
+      target: '#appointments-table',
+      swap: 'innerHTML'
+    });
+  }
+
+  document.body.addEventListener('htmx:afterRequest', function(evt) {
+    if (evt.detail.requestConfig.path === '/api/appointments' && evt.detail.xhr.status === 200) {
+      try {
+        const appointments = JSON.parse(evt.detail.xhr.responseText);
+        renderAppointmentsTable(appointments);
+        populateAppointmentDropdowns();
+      } catch (e) {
+        console.error('Failed to parse appointments JSON:', e);
+      }
+    }
+  });
+
+  function renderAppointmentsTable(appointments) {
+    if (appointments.length === 0) {
+      document.getElementById('appointments-table').innerHTML = `
+        <div class="text-center py-8">
+          <p class="text-base-content/70 mb-4">No appointments found</p>
+          <label for="add-appointment-modal" class="btn btn-primary">Add Your First Appointment</label>
+        </div>
+      `;
+      return;
+    }
+
+    let tableHtml = `
+      <table class="table table-zebra w-full">
+        <thead>
+          <tr>
+            <th>User</th>
+            <th>Employee</th>
+            <th>Service</th>
+            <th>Location</th>
+            <th>Date & Time</th>
+            <th>Status</th>
+            <th class="text-right">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+    `;
+
+    appointments.forEach(apt => {
+      const userName = users.find(u => u.userId == apt.userId)?.firstName + ' ' + users.find(u => u.userId == apt.userId)?.lastName || 'Unknown';
+      const empName = employees.find(e => e.employeeId == apt.employeeId)?.firstName + ' ' + employees.find(e => e.employeeId == apt.employeeId)?.lastName || 'Unknown';
+      const serviceName = services.find(s => s.serviceId == apt.serviceId)?.name || 'Unknown';
+      const locationName = locations.find(l => l.locationId == apt.locationId)?.name || 'Unknown';
+      tableHtml += `
+        <tr>
+          <td>${userName}</td>
+          <td>${empName}</td>
+          <td>${serviceName}</td>
+          <td>${locationName}</td>
+          <td>${apt.date} ${apt.time}</td>
+          <td><span class="badge badge-${apt.status === 'completed' ? 'success' : apt.status === 'pending' ? 'warning' : 'error'}">${apt.status}</span></td>
+          <td class="text-right">
+            <div class="flex gap-2 justify-end">
+              <button class="btn btn-sm btn-ghost" onclick="editAppointment(${apt.appointmentId}, ${apt.userId}, ${apt.employeeId}, ${apt.serviceId}, ${apt.locationId}, '${apt.date}', '${apt.time}', '${apt.status}')">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                  <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                </svg>
+              </button>
+              <button class="btn btn-sm btn-ghost text-error" onclick="confirmDeleteAppointment(${apt.appointmentId}, '${serviceName}')">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="3 6 5 6 21 6"/>
+                  <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                </svg>
+              </button>
+            </div>
+          </td>
+        </tr>
+      `;
+    });
+
+    tableHtml += `</tbody></table>`;
+    document.getElementById('appointments-table').innerHTML = tableHtml;
+  }
+
+  function editAppointment(id, userId, employeeId, serviceId, locationId, date, time, status) {
+    document.getElementById('edit-appointment-id').value = id;
+    document.getElementById('edit-appointment-user').value = userId;
+    document.getElementById('edit-appointment-employee').value = employeeId;
+    document.getElementById('edit-appointment-service').value = serviceId;
+    document.getElementById('edit-appointment-location').value = locationId;
+    document.getElementById('edit-appointment-date').value = date;
+    document.getElementById('edit-appointment-time').value = time;
+    document.getElementById('edit-appointment-status').value = status;
+
+    const form = document.getElementById('edit-appointment-form');
+    form.setAttribute('hx-put', `/api/appointments/${id}`);
+    htmx.process(form);
+
+    document.getElementById('edit-appointment-modal').checked = true;
+  }
+
+  function confirmDeleteAppointment(id, service) {
+    if (confirm(`Are you sure you want to delete appointment for "${service}"?`)) {
+      htmx.ajax('DELETE', `/api/appointments/${id}`, {
+        target: '#appointments-table',
+        swap: 'none'
+      });
+    }
+  }
+
+  // Load users for appointments
+  function loadUsers() {
+    fetch('/api/users').then(r => r.json()).then(data => {
+      users = data;
+      populateUserDropdowns();
+    });
+  }
+
+  // Dropdown population
+  function populateDropdowns() {
+    populateLocationDropdowns();
+    populateServiceDropdowns();
+    populateUserDropdowns();
+    populateEmployeeDropdowns();
+  }
+
+  function populateLocationDropdowns() {
+    const selects = ['#add-employee-location', '#edit-employee-location', '#add-appointment-location', '#edit-appointment-location'];
+    selects.forEach(sel => {
+      const select = document.querySelector(sel);
+      if (select) {
+        select.innerHTML = '<option value="">Select Location</option>';
+        locations.forEach(loc => {
+          select.innerHTML += `<option value="${loc.locationId}">${loc.name}</option>`;
+        });
+      }
+    });
+  }
+
+  function populateServiceDropdowns() {
+    const selects = ['#add-appointment-service', '#edit-appointment-service'];
+    selects.forEach(sel => {
+      const select = document.querySelector(sel);
+      if (select) {
+        select.innerHTML = '<option value="">Select Service</option>';
+        services.forEach(svc => {
+          select.innerHTML += `<option value="${svc.serviceId}">${svc.name} (${svc.price.toFixed(2)} kr)</option>`;
+        });
+      }
+    });
+  }
+
+  function populateUserDropdowns() {
+    const selects = ['#add-appointment-user', '#edit-appointment-user'];
+    selects.forEach(sel => {
+      const select = document.querySelector(sel);
+      if (select) {
+        select.innerHTML = '<option value="">Select User</option>';
+        users.forEach(user => {
+          select.innerHTML += `<option value="${user.userId}">${user.firstName} ${user.lastName} (${user.email})</option>`;
+        });
+      }
+    });
+  }
+
+  function populateEmployeeDropdowns() {
+    const selects = ['#add-appointment-employee', '#edit-appointment-employee'];
+    selects.forEach(sel => {
+      const select = document.querySelector(sel);
+      if (select) {
+        select.innerHTML = '<option value="">Select Employee</option>';
+        employees.forEach(emp => {
+          select.innerHTML += `<option value="${emp.employeeId}">${emp.firstName} ${emp.lastName}</option>`;
+        });
+      }
+    });
+  }
+
+  // Tab switching
+  function switchTab(tabName) {
+    // Hide all sections
+    const sections = ['locations-section', 'employees-section', 'services-section', 'appointments-section'];
+    sections.forEach(sec => document.getElementById(sec).classList.add('hidden'));
+
+    // Show selected
+    document.getElementById(tabName + '-section').classList.remove('hidden');
+
+    // Update tab active
+    const tabs = document.querySelectorAll('.tab');
+    tabs.forEach(t => t.classList.remove('tab-active'));
+    event.target.classList.add('tab-active');
+
+    // Load data if needed
+    if (tabName === 'locations') loadLocations();
+    else if (tabName === 'employees') loadEmployees();
+    else if (tabName === 'services') loadServices();
+    else if (tabName === 'appointments') loadAppointments();
+  }
+
+  // Generic handlers
+  document.body.addEventListener('htmx:afterRequest', function(evt) {
+    if (evt.detail.requestConfig.verb === 'POST') {
+      if (evt.detail.xhr.status === 201) {
+        const modalId = evt.detail.target.closest('.modal') ? evt.detail.target.closest('.modal').querySelector('.modal-toggle').id : null;
+        if (modalId) document.getElementById(modalId.replace('add-', '')).checked = false;
+        evt.detail.target.reset();
+        showToast('Item added successfully!', 'success');
+        // Reload current tab data
+        const activeTab = document.querySelector('.tab-active').textContent.toLowerCase();
+        if (activeTab.includes('location')) loadLocations();
+        else if (activeTab.includes('employee')) loadEmployees();
+        else if (activeTab.includes('service')) loadServices();
+        else if (activeTab.includes('appointment')) loadAppointments();
+      }
+    } else if (evt.detail.requestConfig.verb === 'PUT' && evt.detail.xhr.status === 200) {
+      document.querySelector('.modal-toggle:checked')?.click();
+      showToast('Item updated successfully!', 'success');
+      // Reload current tab
+      const activeTab = document.querySelector('.tab-active').textContent.toLowerCase();
+      if (activeTab.includes('location')) loadLocations();
+      else if (activeTab.includes('employee')) loadEmployees();
+      else if (activeTab.includes('service')) loadServices();
+      else if (activeTab.includes('appointment')) loadAppointments();
+    } else if (evt.detail.requestConfig.verb === 'DELETE' && evt.detail.xhr.status === 204) {
+      showToast('Item deleted successfully!', 'success');
+      // Reload current tab
+      const activeTab = document.querySelector('.tab-active').textContent.toLowerCase();
+      if (activeTab.includes('location')) loadLocations();
+      else if (activeTab.includes('employee')) loadEmployees();
+      else if (activeTab.includes('service')) loadServices();
+      else if (activeTab.includes('appointment')) loadAppointments();
+    }
+  });
+
+  function showToast(message, type = 'info') {
+    const toast = document.createElement('div');
+    toast.className = `alert alert-${type} fixed top-4 right-4 w-auto max-w-md z-50 shadow-lg`;
+    toast.innerHTML = `<span>${message}</span>`;
+    document.body.appendChild(toast);
+
+    setTimeout(() => {
+      toast.style.transition = 'opacity 0.3s';
+      toast.style.opacity = '0';
+      setTimeout(() => toast.remove(), 300);
+    }, 3000);
+  }
+
+  // Handle errors
+  document.body.addEventListener('htmx:responseError', function(evt) {
+    console.error('HTMX Error:', evt.detail.xhr.status, evt.detail.xhr.responseText);
+    if (evt.detail.xhr.status === 403) {
+      showToast('Access denied. Admin role required.', 'error');
+    } else {
+      showToast('An error occurred. Please try again.', 'error');
+    }
+  });
+</script>
+
+</body>
+</html>
