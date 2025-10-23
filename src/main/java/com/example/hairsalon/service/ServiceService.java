@@ -22,7 +22,23 @@ public class ServiceService {
         return serviceRepository.findById(id);
     }
 
+    public boolean existsById(Long id) {
+        return serviceRepository.existsById(id);
+    }
+
+    public boolean existsByName(String name) {
+        return serviceRepository.existsByNameIgnoreCase(name);
+    }
+
+    public boolean existsByNameAndIdNot(String name, Long id) {
+        return serviceRepository.existsByNameIgnoreCaseAndServiceIdNot(name, id);
+    }
+
     public Service saveService(Service service) {
+        // Trim whitespace from name
+        if (service.getName() != null) {
+            service.setName(service.getName().trim());
+        }
         return serviceRepository.save(service);
     }
 
@@ -30,16 +46,19 @@ public class ServiceService {
         Optional<Service> optionalService = serviceRepository.findById(id);
         if (optionalService.isPresent()) {
             Service service = optionalService.get();
-            service.setName(serviceDetails.getName());
+            service.setName(serviceDetails.getName().trim());
             service.setDuration(serviceDetails.getDuration());
             service.setPrice(serviceDetails.getPrice());
             return serviceRepository.save(service);
         } else {
-            throw new RuntimeException("Service not found");
+            throw new RuntimeException("Service not found with ID: " + id);
         }
     }
 
     public void deleteService(Long id) {
+        if (!serviceRepository.existsById(id)) {
+            throw new RuntimeException("Service not found with ID: " + id);
+        }
         serviceRepository.deleteById(id);
     }
 }

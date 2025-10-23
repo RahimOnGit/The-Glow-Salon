@@ -6,4 +6,10 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface ServiceRepository extends JpaRepository<Service, Long> {
+
+    // Check if a service exists by name (case-insensitive)
+    boolean existsByNameIgnoreCase(String name);
+
+    // Check if a service exists by name excluding a specific ID (for updates)
+    boolean existsByNameIgnoreCaseAndServiceIdNot(String name, Long serviceId);
 }
