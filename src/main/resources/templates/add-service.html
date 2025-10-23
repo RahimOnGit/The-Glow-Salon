@@ -1,0 +1,12 @@
+<form
+        hx-post="/services"
+        hx-target="#message"
+        hx-swap="innerHTML"
+ class="space-y-4 bg-base-200 p-4 rounded-xl shadow-md"
+>
+    <input type="text" name="name" placeholder="Service name" class="input input-bordered w-full " required>
+<input type="number" name="duration" placeholder="Duration (minutes)" class="input input-bordered w-full" min="1" required>
+    <input type="number" name="number" placeholder="Price(SEK)" class="input input-bordered w-full" min="1" required >
+<button class="btn btn-primary w-full">Add</button>
+    <div id="message"></div>
+</form>
