@@ -63,9 +63,11 @@ public class SecurityConfig {
 //                        .requestMatchers(HttpMethod.GET, "/api/users/**").authenticated()
                                 .requestMatchers(HttpMethod.GET, "/", "/login", "/register", "/css/**", "/js/**", "/login.html").permitAll()
                                 .requestMatchers(HttpMethod.POST, "/api/auth/login", "/api/auth/register").permitAll()
+                                .requestMatchers(HttpMethod.POST, "/api/services/**").hasRole("ADMIN")
 
 //                                .requestMatchers("/", "/login", "/register", "/api/auth/login", "/css/**", "/js/**", "/login.html").permitAll()
-
+                                .requestMatchers(HttpMethod.GET, "/services/add").hasRole("ADMIN")
+                                .requestMatchers(HttpMethod.POST, "/services/add").hasRole("ADMIN")
                                 .requestMatchers(HttpMethod.GET, "/api/users/**").hasRole("ADMIN")
                                 .requestMatchers(HttpMethod.POST, "/api/appointments/**").hasAnyRole("USER", "ADMIN")
 

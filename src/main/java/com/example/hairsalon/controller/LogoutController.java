@@ -32,5 +32,4 @@ public class LogoutController {
 
         return "redirect:/login?logout";
     }
-
 }
