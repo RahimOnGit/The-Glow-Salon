@@ -1,12 +1,10 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="light">
+<html lang="en" data-theme="lofi">
 <head>
   <meta charset="UTF-8">
   <title>Admin Dashboard - Services Management</title>
-  <!-- Tailwind CSS + DaisyUI CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://cdn.jsdelivr.net/npm/daisyui@4.12.10/dist/full.min.css" rel="stylesheet" type="text/css" />
-  <!-- HTMX -->
   <script src="https://unpkg.com/htmx.org@1.9.10"></script>
   <script src="https://unpkg.com/htmx.org/dist/ext/json-enc.js"></script>
 </head>
@@ -64,7 +62,6 @@
           </tr>
           </thead>
           <tbody id="services-table-body">
-          <!-- Services will be loaded here dynamically -->
           <tr>
             <td colspan="5" class="text-center py-8">
               <div class="loading loading-spinner loading-lg"></div>
@@ -78,7 +75,7 @@
   </div>
 
   <!-- Quick Stats -->
-  <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
     <div class="stat bg-base-100 rounded-lg shadow">
       <div class="stat-figure text-primary">
         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="inline-block w-8 h-8 stroke-current">
@@ -98,19 +95,10 @@
       <div class="stat-title">Active Services</div>
       <div class="stat-value text-secondary" id="active-services">0</div>
     </div>
-
-    <div class="stat bg-base-100 rounded-lg shadow">
-      <div class="stat-figure text-accent">
-        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="inline-block w-8 h-8 stroke-current">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-        </svg>
-      </div>
-      <div class="stat-title">Avg. Price</div>
-      <div class="stat-value text-accent" id="avg-price">0 SEK</div>
-    </div>
   </div>
 </div>
 
+<!-- Modals and Toasts -->
 <!-- Add Service Modal -->
 <dialog id="add-service-modal" class="modal">
   <div class="modal-box">
@@ -202,7 +190,6 @@
 </div>
 
 <script>
-  // Escape function for HTML attributes
   function escapeHtml(unsafe) {
     return unsafe
             .replace(/&/g, "&amp;")
@@ -212,179 +199,113 @@
             .replace(/'/g, "&#039;");
   }
 
-  // Load services when page loads
   document.addEventListener('DOMContentLoaded', function() {
     loadServices();
   });
 
-  // Load all services
   function loadServices() {
-    console.log('Loading services...');  // Debug log
     fetch('/api/services', {
-      headers: {
-        'Authorization': 'Bearer ' + localStorage.getItem('jwtToken')
-      }
+      headers: { 'Authorization': 'Bearer ' + localStorage.getItem('jwtToken') }
     })
             .then(response => {
               if (!response.ok) throw new Error('Failed to load services: ' + response.status);
               return response.json();
             })
             .then(services => {
-              console.log('Services loaded:', services);  // Debug log
               updateServicesTable(services);
               updateStats(services);
-              attachEventListeners();  // Attach listeners after updating table
+              attachEventListeners();
             })
-            .catch(error => {
-              console.error('Error loading services:', error);
-              showError('Failed to load services: ' + error.message);
-            });
+            .catch(error => showError('Failed to load services: ' + error.message));
   }
 
-  // Update services table
   function updateServicesTable(services) {
     const tbody = document.getElementById('services-table-body');
-
     if (services.length === 0) {
-      tbody.innerHTML = `
-                <tr>
-                    <td colspan="5" class="text-center py-8 text-gray-500">
-                        No services found. Add your first service!
-                    </td>
-                </tr>
-            `;
+      tbody.innerHTML = `<tr><td colspan="5" class="text-center py-8 text-gray-500">No services found. Add your first service!</td></tr>`;
       return;
     }
-
     tbody.innerHTML = services.map(service => `
-            <tr>
-                <td class="font-mono">${service.serviceId}</td>
-                <td class="font-semibold">${escapeHtml(service.name)}</td>
-                <td>${service.duration} min</td>
-                <td>${service.price.toFixed(0)} SEK</td>
-                <td>
-                    <div class="flex space-x-2">
-                        <button class="btn btn-sm btn-outline btn-info edit-btn"
-                                data-id="${service.serviceId}"
-                                data-name="${escapeHtml(service.name)}"
-                                data-duration="${service.duration}"
-                                data-price="${service.price}">
-                            Edit
-                        </button>
-                        <button class="btn btn-sm btn-outline btn-error delete-btn"
-                                data-id="${service.serviceId}">
-                            Delete
-                        </button>
-                    </div>
-                </td>
-            </tr>
-        `).join('');
+      <tr>
+        <td class="font-mono">${service.serviceId}</td>
+        <td class="font-semibold">${escapeHtml(service.name)}</td>
+        <td>${service.duration} min</td>
+        <td>${service.price.toFixed(0)} SEK</td>
+        <td>
+          <div class="flex space-x-2">
+            <button class="btn btn-sm btn-outline btn-info edit-btn"
+              data-id="${service.serviceId}"
+              data-name="${escapeHtml(service.name)}"
+              data-duration="${service.duration}"
+              data-price="${service.price}">Edit</button>
+            <button class="btn btn-sm btn-outline btn-error delete-btn" data-id="${service.serviceId}">Delete</button>
+          </div>
+        </td>
+      </tr>`).join('');
   }
 
-  // Attach event listeners to buttons after table update
   function attachEventListeners() {
-    // Edit buttons
     document.querySelectorAll('.edit-btn').forEach(btn => {
-      btn.addEventListener('click', function(e) {
-        e.preventDefault();  // منع أي سلوك افتراضي (مثل التنقل)
-        e.stopPropagation();  // إيقاف الانتشار
-        const id = parseInt(this.dataset.id);
-        const name = this.dataset.name;
-        const duration = parseInt(this.dataset.duration);
-        const price = parseFloat(this.dataset.price);
-        console.log('Edit button clicked:', { id, name, duration, price });  // Debug log
-        editService(id, name, duration, price);
+      btn.addEventListener('click', function() {
+        editService(this.dataset.id, this.dataset.name, this.dataset.duration, this.dataset.price);
       });
     });
-
-    // Delete buttons
     document.querySelectorAll('.delete-btn').forEach(btn => {
-      btn.addEventListener('click', function(e) {
-        e.preventDefault();
-        e.stopPropagation();
-        const id = parseInt(this.dataset.id);
-        console.log('Delete button clicked:', id);  // Debug log
-        deleteService(id);
+      btn.addEventListener('click', function() {
+        deleteService(this.dataset.id);
       });
     });
   }
 
-  // Update statistics
   function updateStats(services) {
     document.getElementById('total-services').textContent = services.length;
     document.getElementById('active-services').textContent = services.length;
-
-    if (services.length > 0) {
-      const avgPrice = services.reduce((sum, service) => sum + service.price, 0) / services.length;
-      document.getElementById('avg-price').textContent = Math.round(avgPrice) + ' SEK';
-    }
   }
 
-  // Edit service
   function editService(id, name, duration, price) {
-    console.log('editService called with:', { id, name, duration, price });  // Debug log
     document.getElementById('edit-service-id').value = id;
     document.getElementById('edit-service-name').value = name;
     document.getElementById('edit-service-duration').value = duration;
     document.getElementById('edit-service-price').value = price;
-
-    // للـ HTMX، لكن سنستخدم fetch للإرسال (انظر أدناه)
     const form = document.getElementById('edit-service-form');
     form.setAttribute('hx-put', `/api/services/${id}`);
-    console.log('Form hx-put set to:', form.getAttribute('hx-put'));  // Debug log
-
     document.getElementById('edit-service-modal').showModal();
   }
 
-  // Delete service
   function deleteService(id) {
-    console.log('Deleting service:', id);  // Debug log
     if (confirm('Are you sure you want to delete this service?')) {
       fetch(`/api/services/${id}`, {
         method: 'DELETE',
-        headers: {
-          'Authorization': 'Bearer ' + localStorage.getItem('jwtToken')
-        }
+        headers: { 'Authorization': 'Bearer ' + localStorage.getItem('jwtToken') }
       })
               .then(response => {
                 if (response.status === 204) {
                   showSuccess('Service deleted successfully');
                   loadServices();
-                } else if (response.status === 409) {
-                  throw new Error('Cannot delete service. It may be associated with appointments.');
                 } else {
                   throw new Error('Failed to delete service: ' + response.status);
                 }
               })
-              .catch(error => {
-                console.error('Delete error:', error);
-                showError(error.message);
-              });
+              .catch(error => showError(error.message));
     }
   }
 
-  // Show error message
   function showError(message) {
     const toast = document.getElementById('error-toast');
-    const messageSpan = document.getElementById('error-message');
-    messageSpan.textContent = message;
+    document.getElementById('error-message').textContent = message;
     toast.classList.remove('hidden');
     setTimeout(() => toast.classList.add('hidden'), 5000);
   }
 
-  // Show success message
   function showSuccess(message) {
     const toast = document.getElementById('success-toast');
-    const messageSpan = document.getElementById('success-message');
-    messageSpan.textContent = message;
+    document.getElementById('success-message').textContent = message;
     toast.classList.remove('hidden');
     setTimeout(() => toast.classList.add('hidden'), 3000);
   }
 
-  // Handle add form (HTMX remains for add)
   document.addEventListener('htmx:afterRequest', function(event) {
     const form = event.detail.elt;
-
     if (event.detail.successful && form.id === 'add-service-form') {
       document.getElementById('add-service-modal').close();
       form.reset();
@@ -393,9 +314,8 @@
     }
   });
 
-  // Handle edit form submit using fetch (بدلاً من HTMX للتصحيح)
   document.getElementById('edit-service-form').addEventListener('submit', function(e) {
-    e.preventDefault();  // منع الإرسال الافتراضي
+    e.preventDefault();
     const formData = new FormData(this);
     const serviceData = {
       name: formData.get('name'),
@@ -403,9 +323,6 @@
       price: parseFloat(formData.get('price'))
     };
     const id = parseInt(formData.get('id'));
-
-    console.log('Submitting edit form with:', { id, ...serviceData });  // Debug log
-
     fetch(`/api/services/${id}`, {
       method: 'PUT',
       headers: {
@@ -415,28 +332,15 @@
       body: JSON.stringify(serviceData)
     })
             .then(response => {
-              if (response.ok) {
-                return response.json();
-              } else {
-                throw new Error(`Update failed: ${response.status} - ${response.statusText}`);
-              }
+              if (response.ok) return response.json();
+              throw new Error(`Update failed: ${response.status}`);
             })
-            .then(updatedService => {
-              console.log('Service updated:', updatedService);  // Debug log
+            .then(() => {
               document.getElementById('edit-service-modal').close();
               showSuccess('Service updated successfully');
-              loadServices();  // إعادة تحميل الجدول
+              loadServices();
             })
-            .catch(error => {
-              console.error('Update error:', error);
-              showError(error.message);
-            });
-  });
-
-  // Handle htmx errors globally
-  document.body.addEventListener('htmx:responseError', function(evt) {
-    console.error('HTMX Response Error:', evt.detail.xhr);  // Debug log
-    showError('Request failed: ' + (evt.detail.xhr.statusText || 'Unknown error'));
+            .catch(error => showError(error.message));
   });
 </script>
 
