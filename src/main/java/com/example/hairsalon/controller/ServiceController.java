@@ -23,10 +23,13 @@ public class ServiceController {
     private ServiceService serviceService;
     @GetMapping("/add")
     public String tempServiceForm(Model model) {
-        model.addAttribute("service", new Service());
-        return "add-service";
-    }
 
+        if (!model.containsAttribute("service")) {
+            model.addAttribute("service", new Service());
+            return "add-service";
+        }
+    return "add-service";
+    }
 
     @PostMapping("/add")
     public String addService(@Valid @ModelAttribute("service") Service service , BindingResult bindingResult, RedirectAttributes redirectAttributes , Model model) {

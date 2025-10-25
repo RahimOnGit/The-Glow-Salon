@@ -1,37 +1,42 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="lofi">
+<html lang="en" xmlns:th="http://www.thymeleaf.org" data-theme="lofi">
 <head>
     <meta charset="UTF-8">
-    <title>Title</title>
-    <!-- htmx and json-enc extension for sending form data as JSON -->
-    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
-    <script src="https://unpkg.com/htmx.org/dist/ext/json-enc.js"></script>
-
-    <!-- Tailwind CSS + DaisyUI CDN -->
+    <title>Admin Dashboard - The Glow Salon</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://cdn.jsdelivr.net/npm/daisyui@4.12.10/dist/full.min.css" rel="stylesheet" type="text/css" />
-
+    <link href="https://cdn.jsdelivr.net/npm/daisyui@4.12.10/dist/full.min.css" rel="stylesheet">
 </head>
 <body class="min-h-screen bg-base-200">
 
-<div id="navbar-container"
-     hx-get="/partials/navbar.html"
-     hx-target="this"
-     hx-swap="innerHTML"></div>
+<!-- Simple Static Navbar for now -->
+<div class="navbar bg-base-100 shadow-lg mb-8">
+    <div class="navbar-start">
+        <a class="btn btn-ghost text-xl" href="/dashboard">The Glow Salon</a>
+    </div>
+    <div class="navbar-center">
+        <span class="text-lg font-semibold">Admin Dashboard</span>
+    </div>
+    <div class="navbar-end">
+        <form method="post" th:action="@{/logout}">
+            <button class="btn btn-ghost">Logout</button>
+        </form>
+    </div>
+</div>
 
-<nav class="navbar justify-end">
-    <form method="post" action="logout" >
-        <button class="btn btn-ghost">Logout</button>
-    </form>
+<section class="container mx-auto p-8">
+    <h2 class="text-2xl text-center font-bold mb-12">Admin Dashboard</h2>
 
-</nav>
-<section class="container">
-    <h2 class="text-lg text-center font-bold mb-12">Admin Dashboard</h2>
-    <form action="admin/services/add"  class="mb-5">
-        <button class="btn btn-primary">Add Service</button>
-    </form>
-
-
+    <div class="max-w-2xl mx-auto">
+        <div class="card bg-base-100 shadow-xl">
+            <div class="card-body">
+                <h3 class="card-title">Service Management</h3>
+                <p>Add new services to your salon</p>
+                <div class="card-actions justify-end mt-4">
+                    <a href="/admin/services/add" class="btn btn-primary">Add Service</a>
+                </div>
+            </div>
+        </div>
+    </div>
 </section>
 </body>
 </html>
