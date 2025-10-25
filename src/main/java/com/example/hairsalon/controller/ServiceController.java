@@ -4,7 +4,6 @@ import com.example.hairsalon.entity.Service;
 import com.example.hairsalon.service.ServiceService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
@@ -30,7 +29,7 @@ public class ServiceController {
 
 
     @PostMapping("/add")
-    public String addService(@Valid @ModelAttribute("service") Service service , BindingResult bindingResult, RedirectAttributes redirectAttributes) {
+    public String addService(@Valid @ModelAttribute("service") Service service , BindingResult bindingResult, RedirectAttributes redirectAttributes , Model model) {
 
         if(bindingResult.hasErrors())
             return "add-service";
