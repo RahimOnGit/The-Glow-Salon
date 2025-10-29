@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="light">
+<html lang="en" data-theme="lofi">
 <head>
   <meta charset="UTF-8">
   <title>Admin Dashboard - Services Management</title>
@@ -286,8 +286,8 @@
     // Edit buttons
     document.querySelectorAll('.edit-btn').forEach(btn => {
       btn.addEventListener('click', function(e) {
-        e.preventDefault();  // منع أي سلوك افتراضي (مثل التنقل)
-        e.stopPropagation();  // إيقاف الانتشار
+        e.preventDefault();
+        e.stopPropagation();
         const id = parseInt(this.dataset.id);
         const name = this.dataset.name;
         const duration = parseInt(this.dataset.duration);
@@ -328,7 +328,6 @@
     document.getElementById('edit-service-duration').value = duration;
     document.getElementById('edit-service-price').value = price;
 
-    // للـ HTMX، لكن سنستخدم fetch للإرسال (انظر أدناه)
     const form = document.getElementById('edit-service-form');
     form.setAttribute('hx-put', `/api/services/${id}`);
     console.log('Form hx-put set to:', form.getAttribute('hx-put'));  // Debug log
@@ -393,9 +392,8 @@
     }
   });
 
-  // Handle edit form submit using fetch (بدلاً من HTMX للتصحيح)
   document.getElementById('edit-service-form').addEventListener('submit', function(e) {
-    e.preventDefault();  // منع الإرسال الافتراضي
+    e.preventDefault();
     const formData = new FormData(this);
     const serviceData = {
       name: formData.get('name'),
@@ -425,7 +423,7 @@
               console.log('Service updated:', updatedService);  // Debug log
               document.getElementById('edit-service-modal').close();
               showSuccess('Service updated successfully');
-              loadServices();  // إعادة تحميل الجدول
+              loadServices();
             })
             .catch(error => {
               console.error('Update error:', error);
