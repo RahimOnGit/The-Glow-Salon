@@ -60,10 +60,12 @@ public class SecurityConfig {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 
                 .authorizeHttpRequests(auth -> auth
-//                        .requestMatchers(HttpMethod.GET, "/api/users/**").authenticated()
-                                .requestMatchers(HttpMethod.GET, "/", "/login", "/register", "/css/**", "/js/**", "/login.html").permitAll()
-                                .requestMatchers(HttpMethod.POST, "/api/auth/login", "/api/auth/register").permitAll()
-
+                                // Allow all HTTP methods for services endpoints
+                                .requestMatchers("/services/**", "/service-view/**" , "salon/**").permitAll()
+                                .requestMatchers(HttpMethod.GET,
+                                        "/", "/login", "/register", "/css/**", "/js/**", "/login.html",
+                                        "/fragments/**").permitAll()
+                                .requestMatchers(HttpMethod.POST, "/api/auth/login","/api/auth/register").permitAll()
 //                                .requestMatchers("/", "/login", "/register", "/api/auth/login", "/css/**", "/js/**", "/login.html").permitAll()
 
                                 .requestMatchers(HttpMethod.GET, "/api/users/**").hasRole("ADMIN")
