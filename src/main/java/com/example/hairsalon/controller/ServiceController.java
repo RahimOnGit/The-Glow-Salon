@@ -19,7 +19,7 @@ import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/services")
-@PreAuthorize("hasRole('ADMIN')")
+
 public class ServiceController {
 
     @Autowired
@@ -31,6 +31,7 @@ public class ServiceController {
         return ResponseEntity.ok(services);
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @PostMapping
     public ResponseEntity<?> createService(@Valid @RequestBody ServiceRequest serviceRequest) {
         try {
@@ -59,6 +60,7 @@ public class ServiceController {
         }
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @PutMapping("/{id}")
     public ResponseEntity<?> updateService(@PathVariable Long id, @Valid @RequestBody ServiceRequest serviceRequest) {
         try {
@@ -93,7 +95,7 @@ public class ServiceController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
         }
     }
-
+    @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteService(@PathVariable Long id) {
         try {
