@@ -64,7 +64,7 @@ public class SecurityConfig {
                                 .requestMatchers("/services/**", "/service-view/**" , "salon/**").permitAll()
                                 .requestMatchers(HttpMethod.GET,
                                         "/", "/login", "/register", "/css/**", "/js/**", "/login.html",
-                                        "/fragments/**").permitAll()
+                                        "/fragments/**" , "/public/**").permitAll()
                                 .requestMatchers(HttpMethod.POST, "/api/auth/login","/api/auth/register").permitAll()
 //                                .requestMatchers("/", "/login", "/register", "/api/auth/login", "/css/**", "/js/**", "/login.html").permitAll()
 

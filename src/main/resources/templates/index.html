@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="lofi">
+<head>
+
+    <meta charset="UTF-8">
+    <title>The Glow Salon</title>
+    <!-- htmx and json-enc extension for sending form data as JSON -->
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+    <script src="https://unpkg.com/htmx.org/dist/ext/json-enc.js"></script>
+
+    <!-- Tailwind CSS + DaisyUI CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/daisyui@4.12.10/dist/full.min.css" rel="stylesheet" type="text/css" />
+</head>
+<body>
+<div th:replace="fragments/navbar::navbar"></div>
+<div th:replace="fragments/footer::footer"></div>
+</body>
+</html>

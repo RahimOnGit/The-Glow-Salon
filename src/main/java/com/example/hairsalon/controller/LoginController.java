@@ -35,8 +35,8 @@ public class LoginController {
     @PostMapping("/login-success")
     public String loginSuccess() {
         return """
-    <div hx-redirect="/dashboard"> </div>
-    <script> window.location.href= '/dashboard';</script>
+    <div hx-redirect="/salon/services"> </div>
+    <script> window.location.href= '/salon/services';</script>
     """;
 
     }
