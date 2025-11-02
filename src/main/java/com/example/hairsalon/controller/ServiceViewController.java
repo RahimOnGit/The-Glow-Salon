@@ -17,6 +17,6 @@ public class ServiceViewController {
     @GetMapping
     public String getServiceView(Model model) {
         model.addAttribute("services", serviceService.getAllServices());
-    return "fragments/service-list";
+    return "fragments/service-list:: service-list";
     }
 }
