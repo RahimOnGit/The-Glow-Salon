@@ -61,6 +61,16 @@ public class SecurityConfig {
 
                 .authorizeHttpRequests(auth -> auth
                                 // Allow all HTTP methods for services endpoints
+
+                                        .requestMatchers(
+                                                "/images/**",     // ✅ allow image files
+                                                "/css/**",        // ✅ allow stylesheets
+                                                "/js/**",         // ✅ allow JavaScript
+                                                "/webjars/**",    // ✅ allow webjars (if used)
+                                                "/",              // ✅ allow home page
+                                                "/home",          // optional
+                                                "/index"          // optional
+                                        ).permitAll()
                                 .requestMatchers("/services/**", "/service-view/**" , "salon/**").permitAll()
                                 .requestMatchers(HttpMethod.GET,
                                         "/", "/login", "/register", "/css/**", "/js/**", "/login.html",
