@@ -75,7 +75,7 @@ public class LoginController {
             if ("admin".equals(user.getRole())) {
                 return "adminDashboard";  // Serves adminDashboard.html
             } else {
-                return "dashboard";  // Serves dashboard.html for other users
+                return "salon/services";  // Serves dashboard.html for other users
             }
         } else {
             // Log error and redirect to login

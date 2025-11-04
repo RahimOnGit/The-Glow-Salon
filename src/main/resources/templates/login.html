@@ -86,11 +86,21 @@
                 const response = JSON.parse(evt.detail.xhr.responseText);
                 const token = response.token;
 
-
                 localStorage.setItem('jwtToken', token);
+                const payload = JSON.parse(atob(token.split('.')[1]));
 
-                // Redirect the user to the services
-                window.location.href = '/salon/services';
+
+                if (payload.role==='admin') {
+
+                    // Redirect the user to the services
+                    window.location.href = 'dashboard';
+                }
+                else if (payload.role==='employee') {
+                    window.location.href = 'salon/services';
+                }
+                else {
+                    console.warn('Unknown role:', payload.role);
+                }
 
             } catch (e) {
                 console.error("Login Success Handler Error:", e);
