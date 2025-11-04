@@ -11,4 +11,11 @@ public class ServicePageController {
     public String getServicePage() {
     return "services";
 }
+
+
+    @GetMapping("booking")
+    public String getBookingPage() {
+        return "booking";
+    }
+
 }

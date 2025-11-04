@@ -63,11 +63,10 @@ public class SecurityConfig {
                                 // Allow all HTTP methods for services endpoints
 
                                         .requestMatchers(
-                                                "/images/**",     // ✅ allow image files
-                                                "/css/**",        // ✅ allow stylesheets
-                                                "/js/**",         // ✅ allow JavaScript
-                                                "/webjars/**",    // ✅ allow webjars (if used)
-                                                "/",              // ✅ allow home page
+                                                "/images/**",     //  image
+                                                "/css/**",        // allow css
+                                                "/js/**",         // allow JavaScript
+                                                "/",              // allow home page
                                                 "/home",          // optional
                                                 "/index"          // optional
                                         ).permitAll()
