@@ -13,9 +13,12 @@
     <link href="https://cdn.jsdelivr.net/npm/daisyui@4.12.10/dist/full.min.css" rel="stylesheet" type="text/css" />
 
 </head>
-<body class="min-h-screen bg-base-200 flex items-center justify-center">
+<body class="min-h-screen bg-base-200 ">
+<div th:replace="fragments/navbar::navbar" class="mb-8"> </div>
 
-<div class="card w-96 bg-base-100 shadow-xl">
+<section class="flex items-center justify-center my-10">
+
+<div class="card w-96 bg-base-100 shadow-xl ">
     <div class="card-body">
         <h2 class="card-title justify-center text-2xl mb-4">Login to The Glow Salon</h2>
 
@@ -71,6 +74,10 @@
 
         </div>
     </div>
+</div>
+</section>
+
+<div th:replace="fragments/footer::footer">
 </div>
 
 <script>

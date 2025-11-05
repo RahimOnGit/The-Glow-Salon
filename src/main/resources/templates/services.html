@@ -18,20 +18,18 @@
 
 <!--services section-->
 <section class="py-12 px-4 bg-base-100">
-
     <div
-            id="service-list"
-            hx-get="/service-view"
+            id="booking-section"
+            hx-get="/service-list-fragment"
             hx-trigger="load"
-            hx-target="#service-list"
+            hx-target="#booking-section"
             hx-swap="innerHTML"
             class="space-y-4"
     >
 
-        <p id="load" class=" text-center text-gray-500">Loading Services...</p>
+        <p  class=" text-center text-gray-500">Loading Services...</p>
     </div>
 
-        <a href="booking" class="btn btn btn-primary text-center">Next</a>
 </section>
 
 <!--Footer  -->

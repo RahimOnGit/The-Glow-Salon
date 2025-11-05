@@ -1,32 +1,246 @@
 <div th:fragment="service-list" class="my-12 p-4 bg-base-100 rounded-xl shadow-2xl max-w-2xl mx-auto">
   <h2 class="text-3xl text-center mb-8 font-bold text-neutral-focus">Select Our Services</h2>
 
-  <div class="space-y-4">
-    <th:block th:each="service : ${services}">
-      <label class="flex items-center justify-between p-4 bg-white border border-gray-200 rounded-lg shadow-md transition duration-200 hover:shadow-xl hover:border-primary cursor-pointer">
+  <form id="service-selection-form">
+    <div class="space-y-4">
+      <th:block th:each="service : ${services}">
+        <label class="flex items-center justify-between p-4 bg-white border border-gray-200 rounded-lg shadow-md transition duration-200 hover:shadow-xl hover:border-primary cursor-pointer">
 
-        <div class="flex items-center space-x-3 ">
-          <input type="checkbox"
-                 class="checkbox checkbox-lg checkbox-primary"
-                 th:value="${service.serviceId}"
-                 th:data-name="${service.name}"
-                 th:data-duration="${service.duration}"
-                 th:data-price="${service.price}"
-          >
-          <span class="font-semibold text-lg text-neutral" th:text="${service.name}">Service Title</span>
-        </div>
+          <div class="flex items-center space-x-3 ">
+            <input type="checkbox"
+                   class="checkbox checkbox-lg checkbox-primary service-checkbox"
+                   name="serviceId"
+                   th:value="${service.serviceId}"
+                   th:data-duration="${service.duration}"
+            >
+            <span class="font-semibold text-lg text-neutral" th:text="${service.name}">Service Title</span>
+          </div>
 
-        <div class="text-right flex flex-col items-end space-y-1">
-          <span class="text-sm text-gray-500 font-medium" th:text="${service.duration} + ' min'">Duration</span>
-          <span class="text-xl font-extrabold text-primary" th:text="${service.price} + ' kr'">Price</span>
-        </div>
-      </label>
-    </th:block>
-  </div>
+          <div class="text-right flex flex-col items-end space-y-1">
+            <span class="text-sm text-gray-500 font-medium" th:text="${service.duration} + ' min'">Duration</span>
+            <span class="text-xl font-extrabold text-primary" th:text="${service.price} + ' kr'">Price</span>
+          </div>
+        </label>
+      </th:block>
+    </div>
+
+    <div class="mt-8 text-center">
+      <button
+              id="continue-to-booking"
+              class="btn btn-primary btn-lg w-full max-w-xs"
+              hx-get="/booking-form-fragment"
+              hx-target="#booking-section"
+              hx-swap="innerHTML"
+              type="button">
+        Continue to Booking ->
+      </button>
+    </div>
+  </form>
+</div>
+
+<div th:fragment="booking-form">
+  <section class="py-12 px-4">
+    <div class="card bg-base-100 shadow-xl max-w-4xl mx-auto">
+      <div class="card-body p-8">
+        <h2 class="text-3xl text-center mb-6 font-bold text-primary">Complete Your Booking</h2>
+
+        <form id="final-booking-form" hx-post="/api/appointments/book" hx-target="#response" hx-swap="outerHTML">
+
+          <input type="hidden" id="selected-time" name="time" required>
+
+          <div class="form-control mb-6">
+            <label class="label"><span class="label-text">Select Location</span></label>
+            <select id="location-select" name="locationId" class="select select-bordered w-full" required>
+              <option value="">Select Location</option>
+              <option value="1">Main Salon</option>
+            </select>
+          </div>
+
+          <div class="form-control mb-6">
+            <label class="label"><span class="label-text">Select Date</span></label>
+            <input type="date" id="date-input" name="date" class="input input-bordered w-full" required>
+          </div>
+
+          <div class="form-control mb-6">
+            <label class="label">
+              <span class="label-text">Select Time</span>
+              <span id="selected-time-display" class="label-text-alt text-primary font-bold"></span>
+            </label>
+            <div id="time-grid" class="grid grid-cols-4 md:grid-cols-6 gap-2 p-3 border rounded-lg bg-base-200">
+              <p class="col-span-full text-center text-gray-500">Select a date first.</p>
+            </div>
+          </div>
+
+          <div class="form-control mb-6">
+            <label class="label">
+              <span class="label-text">Stylist</span>
+            </label>
+            <select id="stylist-select" name="employeeId" class="select select-bordered w-full" required>
+              <option value="">Select Stylist</option>
+            </select>
+          </div>
+
+          <div id="response" class="mb-4"></div>
+
+          <button type="submit" id="submit-btn" class="btn btn-primary w-full" disabled>Book Now</button>
+        </form>
+      </div>
+    </div>
+  </section>
+
+  <script>
+    // NOTE: The `updateNextButton` function is not needed in the booking-form fragment
+    // since the "Continue" button is what triggers the swap.
+
+    // Generate Time Grid (9:00 AM to 5:30 PM, every 30 minutes)
+    function generateTimeGrid() {
+      const timeGrid = document.getElementById('time-grid');
+      if (!timeGrid) return; // Safety check
+
+      const times = [];
+      for (let hour = 9; hour <= 17; hour++) {
+        times.push(`${hour.toString().padStart(2, '0')}:00`);
+        if (hour < 17 || (hour === 17 && 30 <= 30)) { // Stop at 17:30
+          times.push(`${hour.toString().padStart(2, '0')}:30`);
+        }
+      }
+
+      // Filter to ensure we don't go past 17:30 (5:30 PM)
+      const finalTimes = times.filter(time => {
+        const parts = time.split(':');
+        const hour = parseInt(parts[0]);
+        const minute = parseInt(parts[1]);
+        return hour < 17 || (hour === 17 && minute <= 30);
+      });
+
+
+      timeGrid.innerHTML = finalTimes.map(time => `
+                <button type="button" class="btn btn-outline btn-sm rounded-full transition-all duration-200 hover:bg-primary hover:text-white"
+                        onclick="selectTime('${time}')">${time}</button>
+            `).join('');
+    }
+
+    // Select Time Function
+    function selectTime(time) {
+      document.getElementById('selected-time').value = time;
+      document.getElementById('selected-time-display').textContent = `Selected: ${time}`;
+
+      // Update button styles
+      document.querySelectorAll('#time-grid button').forEach(btn => {
+        btn.classList.remove('btn-primary');
+        if(btn.textContent === time) {
+          btn.classList.add('btn-primary');
+        }
+      });
+
+      triggerAvailableEmployees();
+      checkFormComplete();
+    }
+
+    // Set minimum date to today for date input
+    function setMinDate() {
+      const dateInput = document.getElementById('date-input');
+      if (!dateInput) return; // Safety check
+
+      const today = new Date();
+      const yyyy = today.getFullYear();
+      const mm = String(today.getMonth() + 1).padStart(2, '0');
+      const dd = String(today.getDate()).padStart(2, '0');
+      const minDate = `${yyyy}-${mm}-${dd}`;
+      dateInput.min = minDate;
+    }
+
+    // Trigger HTMX for Available Employees
+    function triggerAvailableEmployees() {
+      const locationId = document.getElementById('location-select').value;
+      const date = document.getElementById('date-input').value;
+      const time = document.getElementById('selected-time').value;
+
+      // NOTE: You need to implement logic to get the selected serviceId from the previous fragment.
+      // Since data wasn't passed in the hx-get call, we'll use a placeholder for now.
+      const serviceId = 1; // Placeholder for selected service ID
+
+      if (locationId && date && time && serviceId) {
+        const url = `/api/appointments/available-employees?locationId=${locationId}&date=${date}&time=${time}&serviceId=${serviceId}`;
+        // Use HTMX to update the stylist select box
+        htmx.ajax('GET', url, {target: '#stylist-select', swap: 'innerHTML'});
+      }
+    }
+
+    // Check if form is complete to enable submit
+    function checkFormComplete() {
+      const location = document.getElementById('location-select').value;
+      const date = document.getElementById('date-input').value;
+      const time = document.getElementById('selected-time').value;
+      const stylist = document.getElementById('stylist-select').value;
+      const submitBtn = document.getElementById('submit-btn');
+
+      if (location && date && time && stylist) {
+        submitBtn.disabled = false;
+      } else {
+        submitBtn.disabled = true;
+      }
+    }
+
+    // Handle response (Listener for the final form submission)
+    // Using document.body ensures the listener persists after fragment swaps.
+    document.body.addEventListener('htmx:afterRequest', function(e) {
+      if (e.detail.elt.id === 'final-booking-form') {
+        // ... (your existing response handling logic for success/failure) ...
+      }
+      // Listener for stylist select update
+      if (e.detail.target && e.detail.target.id === 'stylist-select') {
+        try {
+          const employees = JSON.parse(e.detail.xhr.responseText);
+          let options = '<option value="">Select a stylist</option>';
+          if (Array.isArray(employees)) {
+            employees.forEach(emp => {
+              options += `<option value="${emp.employeeId}">${emp.name}</option>`;
+            });
+          }
+          e.detail.target.innerHTML = options;
+          checkFormComplete();
+        } catch (error) {
+          e.detail.target.innerHTML = '<option value="">No available stylists</option>';
+          checkFormComplete();
+        }
+      }
+    });
+
+
+    // -------------------------------------------------------------------
+    function initializeBookingForm() {
+      setMinDate();
+      generateTimeGrid();
+
+      // Re-add event listeners since the elements were swapped in
+      document.getElementById('location-select').addEventListener('change', function() {
+        triggerAvailableEmployees();
+        checkFormComplete();
+      });
+
+      document.getElementById('date-input').addEventListener('change', function() {
+        triggerAvailableEmployees();
+        checkFormComplete();
+      });
+
+      document.getElementById('stylist-select').addEventListener('change', checkFormComplete);
+
+      // Attach listener for time buttons once they are generated
+      document.getElementById('time-grid').addEventListener('click', function(e) {
+        if (e.target.tagName === 'BUTTON' && e.target.classList.contains('btn-outline')) {
+          selectTime(e.target.textContent);
+        }
+      });
+    }
+
+    // Call the initialization function immediately after the script is parsed,
+    // which happens instantly when the fragment is swapped in by HTMX.
+    initializeBookingForm();
+  </script>
 </div>
 
 
-<!--services overview in home page-->
 <div th:fragment="serviceOverviewFragment" class=" py-10 bg-base-300">
   <h2 class="text-2xl text-center mb-10 font-bold ">Our Services</h2>
   <div class="grid md:grid-cols-2 gap-6 max-w-2xl mx-auto ">

@@ -67,10 +67,10 @@ public class SecurityConfig {
                                                 "/css/**",        // allow css
                                                 "/js/**",         // allow JavaScript
                                                 "/",              // allow home page
-                                                "/home",          // optional
-                                                "/index"          // optional
+                                                "/home",
+                                                "/index"
                                         ).permitAll()
-                                .requestMatchers("/services/**", "/service-view/**" , "salon/**").permitAll()
+                                .requestMatchers("/services/**", "/service-view/**" , "/salon/**","/booking-fragment").permitAll()
                                 .requestMatchers(HttpMethod.GET,
                                         "/", "/login", "/register", "/css/**", "/js/**", "/login.html",
                                         "/fragments/**" , "/public/**").permitAll()
