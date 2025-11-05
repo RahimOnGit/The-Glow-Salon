@@ -1,3 +1,4 @@
+<!-- resources/static/templates/booking.html -->
 <!DOCTYPE html>
 <html lang="en" data-theme="lofi">
 <head>
@@ -29,9 +30,15 @@
 
 <!-- Booking Section -->
 <section class="py-12 px-4">
-    <!-- Progress Bar -->
+    <!-- Dynamic Progress Bar -->
     <div class="progress progress-primary w-full mb-8">
-        <div class="progress-bar" style="width: 50%;"></div> <!-- Adjust based on steps -->
+        <div class="progress-bar" id="progress-bar" style="width: 0%;"></div>
+    </div>
+    <div class="flex justify-between text-sm text-base-content/60 mb-4">
+        <span>1. Location</span>
+        <span>2. Date</span>
+        <span>3. Time</span>
+        <span>4. Stylist</span>
     </div>
 
     <div class="card bg-base-100 shadow-xl max-w-4xl mx-auto">
@@ -56,8 +63,9 @@
                     </label>
                     <select name="locationId" id="location-select" class="select select-bordered w-full" required>
                         <option value="">Select Location</option>
-                        <option value="1">Main Salon - Downtown</option>
-                        <option value="2">Branch Salon - Uptown</option>
+                        <th:block th:each="loc : ${locations}">
+                            <option th:value="${loc.locationId}" th:text="${loc.name}"></option>
+                        </th:block>
                     </select>
                 </div>
 
@@ -215,6 +223,7 @@
         });
 
         triggerAvailableEmployees();
+        updateProgress();
         checkFormComplete();
     }
 
@@ -226,6 +235,19 @@
         const dd = String(today.getDate()).padStart(2, '0');
         const minDate = `${yyyy}-${mm}-${dd}`;
         document.getElementById('date-input').min = minDate;
+    }
+
+    // Update Progress Bar
+    function updateProgress() {
+        const steps = [
+            !!document.getElementById('location-select').value,
+            !!document.getElementById('date-input').value,
+            !!document.getElementById('selected-time').value,
+            !!document.getElementById('stylist-select').value
+        ];
+        const completed = steps.filter(Boolean).length;
+        const progress = (completed / 4) * 100;
+        document.getElementById('progress-bar').style.width = progress + '%';
     }
 
     // Trigger HTMX for Available Employees
@@ -253,6 +275,7 @@
         } else {
             document.getElementById('submit-btn').disabled = true;
         }
+        updateProgress();
     }
 
     // Event Listeners
@@ -274,7 +297,7 @@
             if (e.detail.successful) {
                 try {
                     const response = JSON.parse(e.detail.xhr.responseText);
-                    if (response.success) {
+                    if (response.message) {
                         alert('Appointment booked successfully!');
                         window.location.href = '/dashboard';
                     } else {
@@ -323,6 +346,7 @@
     document.addEventListener('DOMContentLoaded', function() {
         setMinDate();
         generateTimeGrid();
+        updateProgress();
 
         // Initialize event listeners
         document.getElementById('location-select').addEventListener('change', checkFormComplete);

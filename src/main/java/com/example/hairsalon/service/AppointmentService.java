@@ -2,6 +2,7 @@ package com.example.hairsalon.service;
 
 import com.example.hairsalon.dto.BookingRequest;
 import com.example.hairsalon.entity.Appointment;
+import com.example.hairsalon.entity.AppointmentStatus;
 import com.example.hairsalon.entity.Employee;
 import com.example.hairsalon.entity.Location;
 import com.example.hairsalon.entity.Service;
@@ -58,7 +59,7 @@ public class AppointmentService {
         appointment.setLocation(location);
         appointment.setDate(request.getDate());
         appointment.setTime(request.getTime());
-        appointment.setStatus("scheduled");
+        appointment.setStatus(AppointmentStatus.PENDING);
 
         // Save
         Appointment saved = appointmentRepository.save(appointment);
@@ -74,7 +75,7 @@ public class AppointmentService {
         LocalTime endTime = startTime.plusMinutes(duration);
 
         for (Appointment a : existing) {
-            if (!"scheduled".equals(a.getStatus())) continue; // Only check scheduled
+            if (!AppointmentStatus.PENDING.equals(a.getStatus())) continue; // Only check pending
             LocalTime aEndTime = a.getTime().plusMinutes(a.getService().getDuration());
             // Overlap if start < aEnd and end > aStart
             if (startTime.isBefore(aEndTime) && endTime.isAfter(a.getTime())) {
@@ -85,6 +86,6 @@ public class AppointmentService {
     }
 
     public List<Appointment> getUserAppointments(Long userId) {
-        return appointmentRepository.findByUser_UserIdAndStatus(userId, "scheduled");
+        return appointmentRepository.findByUser_UserIdAndStatus(userId, AppointmentStatus.PENDING);
     }
 }

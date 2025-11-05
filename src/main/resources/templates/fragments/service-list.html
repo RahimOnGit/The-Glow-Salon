@@ -1,11 +1,42 @@
-<div class="space-y-4 max-w-xl mx-auto">
+<!-- resources/static/templates/fragments/service-list.html -->
+<div th:fragment="service-list" class="my-12 p-4 bg-base-100 rounded-xl shadow-2xl max-w-2xl mx-auto">
+  <h2 class="text-3xl text-center mb-8 font-bold text-neutral-focus">Select Our Services</h2>
 
-  <th:block th:each="service : ${services}">
-    <label class="flex justify-between items-center bg-white p-4 rounded-xl shadow-md cursor-pointer hover:shadow-lg transition">
-      <input type="radio" name="service" class="radio radio-primary" th:value="${service.serviceId}" th:data-duration="${service.duration}" th:data-price="${service.price}">
-      <span class="font-medium" th:text="${service.name}">Service title</span>
-      <span class="text-gray-500" th:text="${service.duration} + ' min'">Service duration</span>
-      <span class="rounded-full border px-4 py-1 font-semibold text-primary" th:text="${service.price} + ' kr'">Price</span>
-    </label>
-  </th:block>
+  <div class="space-y-4">
+    <th:block th:each="service : ${services}">
+      <label class="flex items-center justify-between p-4 bg-white border border-gray-200 rounded-lg shadow-md transition duration-200 hover:shadow-xl hover:border-primary cursor-pointer">
+
+        <div class="flex items-center space-x-3 ">
+          <input type="radio"
+                 name="serviceId"
+                 class="radio radio-lg radio-primary"
+                 th:value="${service.serviceId}"
+                 th:data-name="${service.name}"
+                 th:data-duration="${service.duration}"
+                 th:data-price="${service.price}"
+          >
+          <span class="font-semibold text-lg text-neutral" th:text="${service.name}">Service Title</span>
+        </div>
+
+        <div class="text-right flex flex-col items-end space-y-1">
+          <span class="text-sm text-gray-500 font-medium" th:text="${service.duration} + ' min'">Duration</span>
+          <span class="text-xl font-extrabold text-primary" th:text="${service.price} + ' kr'">Price</span>
+        </div>
+      </label>
+    </th:block>
+  </div>
 </div>
+
+
+<!--&lt;!&ndash;services overview in home page&ndash;&gt;-->
+<!--<div th:fragment="serviceOverviewFragment" class=" py-10 bg-base-300">-->
+<!--  <h2 class="text-2xl text-center mb-10 font-bold ">Our Services</h2>-->
+<!--  <div class="grid md:grid-cols-2 gap-6 max-w-2xl mx-auto ">-->
+<!--    <th:block th:each="service : ${services}">-->
+
+<!--      <div class="py-8 bg-black text-center text-white  rounded shadow-md hover:shadow-lg transition">-->
+<!--        <h3 class="font-semibold text-lg" th:text="${service.name}">Service Name</h3>-->
+<!--      </div>-->
+<!--    </th:block>-->
+<!--  </div>-->
+<!--</div>-->

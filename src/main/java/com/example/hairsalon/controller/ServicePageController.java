@@ -7,8 +7,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 @Controller
 @RequestMapping("/salon")
 public class ServicePageController {
-@GetMapping("/services")
+    @GetMapping("/services")
     public String getServicePage() {
-    return "services";
-}
+        return "services";
+    }
 }

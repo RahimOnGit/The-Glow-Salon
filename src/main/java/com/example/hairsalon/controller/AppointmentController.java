@@ -2,9 +2,12 @@ package com.example.hairsalon.controller;
 
 import com.example.hairsalon.dto.BookingRequest;
 import com.example.hairsalon.entity.Appointment;
+import com.example.hairsalon.entity.Location;
+import com.example.hairsalon.entity.Service;
 import com.example.hairsalon.service.AppointmentService;
 import com.example.hairsalon.service.EmployeeService;
 import com.example.hairsalon.service.LocationService;
+import com.example.hairsalon.service.ServiceService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -17,6 +20,7 @@ import java.time.LocalTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/appointments")
@@ -31,8 +35,11 @@ public class AppointmentController {
     @Autowired
     private LocationService locationService;
 
+    @Autowired
+    private ServiceService serviceService;
+
     @PostMapping("/book")
-    @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
+    @PreAuthorize("hasRole('CUSTOMER') or hasRole('ADMIN')")
     public ResponseEntity<?> bookAppointment(@Valid @RequestBody BookingRequest request) {
         try {
             Appointment appointment = appointmentService.bookAppointment(request);
@@ -50,19 +57,21 @@ public class AppointmentController {
     @GetMapping("/available-employees")
     public ResponseEntity<List<Map<String, Object>>> getAvailableEmployees(
             @RequestParam Long locationId,
-            @RequestParam LocalDate date,
-            @RequestParam LocalTime time,
+            @RequestParam String date,
+            @RequestParam String time,
             @RequestParam Long serviceId) {
-        // For this endpoint, filter employees at location with no conflict at time+duration
-        // But since duration needed, assume service fetched in service, but here simple: use available on date
-        List<Map<String, Object>> available = employeeService.getAvailableEmployeesOnDate(date, 8).stream()
-                .filter(e -> e.getLocation().getLocationId().equals(locationId))
+        LocalDate parsedDate = LocalDate.parse(date);
+        LocalTime parsedTime = LocalTime.parse(time);
+        Service service = serviceService.getServiceById(serviceId).orElseThrow(() -> new RuntimeException("Service not found"));
+        int duration = service.getDuration();
+        Location location = locationService.getLocationById(locationId);
+        List<Map<String, Object>> available = employeeService.getAvailableEmployees(location, parsedDate, parsedTime, duration).stream()
                 .map(e -> {
                     Map<String, Object> emp = new HashMap<>();
                     emp.put("employeeId", e.getEmployeeId());
                     emp.put("name", e.getFirstName() + " " + e.getLastName());
                     return emp;
-                }).toList();
+                }).collect(Collectors.toList());
         return ResponseEntity.ok(available);
     }
 

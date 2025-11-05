@@ -1,17 +1,25 @@
 package com.example.hairsalon.service;
 
+import com.example.hairsalon.entity.Appointment;
 import com.example.hairsalon.entity.Employee;
+import com.example.hairsalon.entity.Location;
+import com.example.hairsalon.repository.AppointmentRepository;
 import com.example.hairsalon.repository.EmployeeRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class EmployeeService {
     @Autowired
     private EmployeeRepository employeeRepository;
+
+    @Autowired
+    private AppointmentRepository appointmentRepository;
 
     public List<Employee> getAllEmployees() {
         return employeeRepository.findAll();
@@ -21,7 +29,29 @@ public class EmployeeService {
         return employeeRepository.findById(id).orElseThrow(() -> new RuntimeException("Employee not found"));
     }
 
+    public List<Employee> getEmployeesByLocation(Location location) {
+        return employeeRepository.findByLocation(location);
+    }
+
     public List<Employee> getAvailableEmployeesOnDate(LocalDate date, long maxBookingsPerDay) {
         return employeeRepository.findAvailableOnDate(date, maxBookingsPerDay);
+    }
+
+    public List<Employee> getAvailableEmployees(Location location, LocalDate date, LocalTime startTime, int duration) {
+        List<Employee> employees = getEmployeesByLocation(location);
+        return employees.stream()
+                .filter(e -> !hasTimeConflict(e, date, startTime, duration))
+                .collect(Collectors.toList());
+    }
+
+    public boolean hasTimeConflict(Employee employee, LocalDate date, LocalTime startTime, int duration) {
+        List<Appointment> existing = appointmentRepository.findByEmployeeAndDate(employee, date);
+        LocalTime endTime = startTime.plusMinutes(duration);
+        return existing.stream()
+                .filter(a -> "scheduled".equals(a.getStatus()))
+                .anyMatch(a -> {
+                    LocalTime aEndTime = a.getTime().plusMinutes(a.getService().getDuration());
+                    return startTime.isBefore(aEndTime) && endTime.isAfter(a.getTime());
+                });
     }
 }
