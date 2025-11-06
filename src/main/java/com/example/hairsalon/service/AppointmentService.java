@@ -14,7 +14,9 @@ import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 //@Service
 @org.springframework.stereotype.Service
@@ -29,45 +31,54 @@ public class AppointmentService {
     private EmployeeService employeeService;
 
     @Autowired
-    private ServiceService serviceService; // Assuming ServiceService exists
+    private ServiceService serviceService;
 
     @Autowired
     private LocationService locationService;
 
     private static final long MAX_BOOKINGS_PER_DAY = 8; // Configurable
 
-    public Appointment bookAppointment(BookingRequest request) {
+    public List<Appointment> bookAppointment(BookingRequest request) {
         // Get current user from security context
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
         User user = userService.getUserByEmail(email).orElseThrow(() -> new RuntimeException("User not found"));
 
         // Validate and fetch entities
-        Service service = serviceService.getServiceById(request.getServiceId()).orElseThrow(() -> new RuntimeException("Service not found"));
         Employee employee = employeeService.getEmployeeById(request.getEmployeeId());
         Location location = locationService.getLocationById(request.getLocationId());
+        LocalDate date = request.getDate();
+        LocalTime currentTime = request.getTime();
 
-        // Conflict check
-        if (hasTimeConflict(employee, request.getDate(), request.getTime(), service.getDuration())) {
-            throw new RuntimeException("Time slot conflict with existing appointment");
+        List<Appointment> appointments = new ArrayList<>();
+        for (Long serviceId : request.getServiceIds()) {
+            Service service = serviceService.getServiceById(serviceId).orElseThrow(() -> new RuntimeException("Service not found: " + serviceId));
+
+            // Conflict check for this slot
+            if (hasTimeConflict(employee, date, currentTime, service.getDuration())) {
+                throw new RuntimeException("Time slot conflict with existing appointment for service: " + service.getName());
+            }
+
+            // Create appointment
+            Appointment appointment = new Appointment();
+            appointment.setUser(user);
+            appointment.setEmployee(employee);
+            appointment.setService(service);
+            appointment.setLocation(location);
+            appointment.setDate(date);
+            appointment.setTime(currentTime);
+            appointment.setStatus(AppointmentStatus.PENDING);
+
+            // Save
+            appointments.add(appointmentRepository.save(appointment));
+
+            // Advance time for next service
+            currentTime = currentTime.plusMinutes(service.getDuration());
         }
 
-        // Create appointment
-        Appointment appointment = new Appointment();
-        appointment.setUser(user);
-        appointment.setEmployee(employee);
-        appointment.setService(service);
-        appointment.setLocation(location);
-        appointment.setDate(request.getDate());
-        appointment.setTime(request.getTime());
-        appointment.setStatus(AppointmentStatus.PENDING);
-
-        // Save
-        Appointment saved = appointmentRepository.save(appointment);
-
-        // Optionally increment visit count
+        // Increment visit count once
         userService.incrementVisitCount(user.getUserId());
 
-        return saved;
+        return appointments;
     }
 
     private boolean hasTimeConflict(Employee employee, LocalDate date, LocalTime startTime, int duration) {
@@ -87,5 +98,9 @@ public class AppointmentService {
 
     public List<Appointment> getUserAppointments(Long userId) {
         return appointmentRepository.findByUser_UserIdAndStatus(userId, AppointmentStatus.PENDING);
+    }
+
+    public Optional<Appointment> getAppointmentById(Long id) {
+        return appointmentRepository.findById(id);
     }
 }

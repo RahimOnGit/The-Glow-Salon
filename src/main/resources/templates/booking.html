@@ -1,4 +1,3 @@
-<!-- resources/static/templates/booking.html -->
 <!DOCTYPE html>
 <html lang="en" data-theme="lofi">
 <head>
@@ -44,11 +43,26 @@
     <div class="card bg-base-100 shadow-xl max-w-4xl mx-auto">
         <div class="card-body p-8">
             <h2 class="text-3xl text-center mb-6 font-bold text-primary">Complete Your Booking</h2>
-            <p class="text-center mb-8 text-base-content/70">Selected Service: <span th:text="${serviceId} + ' (Details will be loaded)'" class="font-semibold text-primary">Selected Service</span></p>
+
+            <!-- Selected Services Display -->
+            <div class="mb-8 p-4 bg-base-200 rounded-lg">
+                <h3 class="text-lg font-semibold mb-2">Selected Services:</h3>
+                <ul class="list-disc pl-5 space-y-1">
+                    <th:block th:each="s : ${selectedServices}">
+                        <li th:text="${s.name} + ' (' + ${s.duration} + ' min, ' + ${s.price} + ' kr)'"></li>
+                    </th:block>
+                </ul>
+                <p class="mt-4 font-bold text-primary">
+                    Total Estimated Time: <span th:text="${totalDuration} + ' min'"></span><br>
+                    Total Price: <span th:text="${totalPrice} + ' kr'"></span>
+                </p>
+            </div>
 
             <form id="booking-form" hx-post="/api/appointments/book" hx-ext="json-enc" hx-target="#response" hx-swap="innerHTML">
-                <!-- Hidden input for service ID -->
-                <input type="hidden" name="serviceId" th:value="${serviceId}">
+                <!-- Hidden inputs for service IDs -->
+                <th:block th:each="id : ${serviceIds}">
+                    <input type="hidden" name="serviceIds" th:value="${id}">
+                </th:block>
 
                 <!-- Location Selection Card -->
                 <div class="form-control mb-8">
@@ -250,15 +264,20 @@
         document.getElementById('progress-bar').style.width = progress + '%';
     }
 
+    // Get serviceIds string
+    function getServiceIdsStr() {
+        return Array.from(document.querySelectorAll('input[name="serviceIds"]')).map(input => input.value).join(',');
+    }
+
     // Trigger HTMX for Available Employees
     function triggerAvailableEmployees() {
         const locationId = document.getElementById('location-select').value;
         const date = document.getElementById('date-input').value;
         const time = document.getElementById('selected-time').value;
-        const serviceId = document.querySelector('input[name="serviceId"]').value;
+        const serviceIdsStr = getServiceIdsStr();
 
-        if (locationId && date && time && serviceId) {
-            const url = `/api/appointments/available-employees?locationId=${locationId}&date=${date}&time=${time}&serviceId=${serviceId}`;
+        if (locationId && date && time && serviceIdsStr) {
+            const url = `/api/appointments/available-employees?locationId=${locationId}&date=${date}&time=${time}&serviceIds=${serviceIdsStr}`;
             htmx.ajax('GET', url, {target: '#stylist-select', swap: 'innerHTML'});
         }
     }
@@ -292,21 +311,49 @@
     document.getElementById('stylist-select').addEventListener('change', checkFormComplete);
 
     // Handle response
+    // document.body.addEventListener('htmx:afterRequest', function(e) {
+    //     if (e.detail.elt.id === 'booking-form') {
+    //         if (e.detail.successful) {
+    //             try {
+    //                 const response = JSON.parse(e.detail.xhr.responseText);
+    //                 if (response.appointments && response.appointments.length > 0) {
+    //                     const ids = response.appointments.map(a => a.appointmentId).join(',');
+    //                     window.location.href = `/confirmation?appointmentIds=${ids}`;
+    //                 } else {
+    //                     document.getElementById('response').innerHTML =
+    //                         `<div class="alert alert-error shadow-lg">${response.error || 'Booking failed'}</div>`;
+    //                 }
+    //             } catch (error) {
+    //                 // If response is not JSON, assume success
+    //                 window.location.href = '/dashboard';
+    //             }
+    //         } else {
+    //             try {
+    //                 const response = JSON.parse(e.detail.xhr.responseText);
+    //                 document.getElementById('response').innerHTML =
+    //                     `<div class="alert alert-error shadow-lg">${response.error || 'An error occurred'}</div>`;
+    //             } catch (error) {
+    //                 document.getElementById('response').innerHTML =
+    //                     `<div class="alert alert-error shadow-lg">An error occurred while booking</div>`;
+    //             }
+    //         }
+    //     }
+    // });
+
     document.body.addEventListener('htmx:afterRequest', function(e) {
         if (e.detail.elt.id === 'booking-form') {
             if (e.detail.successful) {
                 try {
                     const response = JSON.parse(e.detail.xhr.responseText);
-                    if (response.message) {
-                        alert('Appointment booked successfully!');
-                        window.location.href = '/dashboard';
+                    if (response.appointmentIds && response.appointmentIds.length > 0) {
+                        const ids = response.appointmentIds.join(',');
+                        window.location.href = `/confirmation?appointmentIds=${ids}`;
                     } else {
                         document.getElementById('response').innerHTML =
                             `<div class="alert alert-error shadow-lg">${response.error || 'Booking failed'}</div>`;
                     }
                 } catch (error) {
                     // If response is not JSON, assume success
-                    alert('Appointment booked successfully!');
                     window.location.href = '/dashboard';
                 }
             } else {

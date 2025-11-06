@@ -17,9 +17,12 @@ import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 @RestController
@@ -42,10 +45,11 @@ public class AppointmentController {
     @PreAuthorize("hasRole('CUSTOMER') or hasRole('ADMIN')")
     public ResponseEntity<?> bookAppointment(@Valid @RequestBody BookingRequest request) {
         try {
-            Appointment appointment = appointmentService.bookAppointment(request);
+            List<Appointment> appointments = appointmentService.bookAppointment(request);
             Map<String, Object> response = new HashMap<>();
-            response.put("message", "Appointment booked successfully");
-            response.put("appointment", appointment);
+            response.put("message", appointments.size() > 1 ? "Appointments booked successfully" : "Appointment booked successfully");
+            List<Long> appointmentIds = appointments.stream().map(Appointment::getAppointmentId).collect(Collectors.toList());
+            response.put("appointmentIds", appointmentIds);
             return ResponseEntity.status(HttpStatus.CREATED).body(response);
         } catch (RuntimeException e) {
             Map<String, Object> error = new HashMap<>();
@@ -59,13 +63,17 @@ public class AppointmentController {
             @RequestParam Long locationId,
             @RequestParam String date,
             @RequestParam String time,
-            @RequestParam Long serviceId) {
+            @RequestParam String serviceIds) {
         LocalDate parsedDate = LocalDate.parse(date);
         LocalTime parsedTime = LocalTime.parse(time);
-        Service service = serviceService.getServiceById(serviceId).orElseThrow(() -> new RuntimeException("Service not found"));
-        int duration = service.getDuration();
+        List<Long> ids = Arrays.stream(serviceIds.split(",")).map(Long::parseLong).collect(Collectors.toList());
+        int totalDuration = 0;
+        for (Long id : ids) {
+            Service service = serviceService.getServiceById(id).orElseThrow(() -> new RuntimeException("Service not found"));
+            totalDuration += service.getDuration();
+        }
         Location location = locationService.getLocationById(locationId);
-        List<Map<String, Object>> available = employeeService.getAvailableEmployees(location, parsedDate, parsedTime, duration).stream()
+        List<Map<String, Object>> available = employeeService.getAvailableEmployees(location, parsedDate, parsedTime, totalDuration).stream()
                 .map(e -> {
                     Map<String, Object> emp = new HashMap<>();
                     emp.put("employeeId", e.getEmployeeId());
