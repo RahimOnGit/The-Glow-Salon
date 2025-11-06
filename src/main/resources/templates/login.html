@@ -102,12 +102,14 @@
                     // Redirect the user to the services
                     window.location.href = 'dashboard';
                 }
-                else if (payload.role==='employee') {
+                else if (payload.role==='customer') {
                     window.location.href = 'salon/services';
                 }
+
                 else {
                     console.warn('Unknown role:', payload.role);
                 }
+
 
             } catch (e) {
                 console.error("Login Success Handler Error:", e);

@@ -46,7 +46,7 @@ public class SecurityConfig {
     public UserDetailsService userDetailsService() {
         UserDetails user = User.withDefaultPasswordEncoder()
                 .username("user")
-                .password("<PASSWORD>")
+                .password("password")
                 .roles("USER")
                 .build();
         return new InMemoryUserDetailsManager(user);
@@ -56,34 +56,39 @@ public class SecurityConfig {
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
                 .csrf(csrf -> csrf.disable())
-
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-
                 .authorizeHttpRequests(auth -> auth
-                                // Allow all HTTP methods for services endpoints
+                        // === PUBLIC STATIC RESOURCES ===
+                        .requestMatchers(
+                                "/images/**",
+                                "/css/**",
+                                "/js/**",
+                                "/favicon.ico"
+                        ).permitAll()
 
-                                        .requestMatchers(
-                                                "/images/**",     //  image
-                                                "/css/**",        // allow css
-                                                "/js/**",         // allow JavaScript
-                                                "/",              // allow home page
-                                                "/home",
-                                                "/index"
-                                        ).permitAll()
-                                .requestMatchers("/services/**", "/service-view/**" , "/salon/**","/booking-fragment").permitAll()
-                                .requestMatchers(HttpMethod.GET,
-                                        "/", "/login", "/register", "/css/**", "/js/**", "/login.html",
-                                        "/fragments/**" , "/public/**").permitAll()
-                                .requestMatchers(HttpMethod.POST, "/api/auth/login","/api/auth/register").permitAll()
-//                                .requestMatchers("/", "/login", "/register", "/api/auth/login", "/css/**", "/js/**", "/login.html").permitAll()
-                                .requestMatchers("/api/appointments/available-employees").permitAll()
-                                .requestMatchers("/api/appointments/locations").permitAll()                                .requestMatchers("/api/appointments/book").authenticated()
+                        // === PUBLIC PAGES ===
+                        .requestMatchers("/", "/home", "/index", "/login", "/register", "/logout").permitAll()
+                        .requestMatchers("/salon/**", "/services/**", "/service-view/**", "/booking-fragment").permitAll()
 
+                        // === FRAGMENTS (GET & POST) ===
+                        .requestMatchers(HttpMethod.GET, "/service-list-fragment", "/booking-form-fragment").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/service-list-fragment").permitAll()
 
-                                .requestMatchers(HttpMethod.GET, "/api/users/**").hasRole("ADMIN")
-                                .requestMatchers(HttpMethod.POST, "/api/appointments/**").hasAnyRole("USER", "ADMIN")
+                        // === AUTH API ===
+                        .requestMatchers(HttpMethod.POST, "/api/auth/login", "/api/auth/register", "/api/auth/status").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/auth/status").permitAll()
 
-                                .anyRequest().authenticated()
+                        // === APPOINTMENT PUBLIC ENDPOINTS ===
+                        .requestMatchers("/api/appointments/locations").permitAll()
+                        .requestMatchers("/api/appointments/available-employees").permitAll()
+
+                        // === PROTECTED ENDPOINTS ===
+                        .requestMatchers("/api/appointments/book").authenticated()
+                        .requestMatchers(HttpMethod.GET, "/api/users/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.POST, "/api/appointments/**").hasAnyRole("USER", "ADMIN")
+
+                        // === FALLBACK ===
+                        .anyRequest().authenticated()
                 )
                 .formLogin(form -> form.disable())
                 .logout(logout -> logout
@@ -105,6 +110,7 @@ public class SecurityConfig {
         configuration.setAllowedOriginPatterns(Arrays.asList("*"));
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE"));
         configuration.setAllowedHeaders(Arrays.asList("*"));
+        configuration.setAllowCredentials(true); // Important for cookies
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);
         return source;

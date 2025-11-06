@@ -2,6 +2,7 @@ package com.example.hairsalon.controller;
 
 import com.example.hairsalon.dto.RegisterRequest;
 import com.example.hairsalon.entity.User;
+import com.example.hairsalon.security.JwtUtils;
 import com.example.hairsalon.service.AuthService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,6 +23,19 @@ public class AuthController {
 
     @Autowired
     private AuthService authService;
+
+    @Autowired
+    private JwtUtils jwtUtils;
+    @GetMapping("/status")
+    public ResponseEntity<Map<String, Object>> checkAuthStatus(
+            @CookieValue(value = "jwt", required = false) String token) {
+
+        boolean loggedIn = token != null && jwtUtils.isTokenValid(token);
+        Map<String, Object> response = new HashMap<>();
+        response.put("loggedIn", loggedIn);
+
+        return ResponseEntity.ok(response);
+    }
 
     @PostMapping("/register")
     public ResponseEntity<Map<String, Object>> register(@Valid @RequestBody RegisterRequest request) {

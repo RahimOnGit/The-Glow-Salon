@@ -180,7 +180,7 @@
                 time: formData.get('time')
             };
 
-            console.log("[v0] Sending payload:", JSON.stringify(payload));
+            console.log("Sending payload:", JSON.stringify(payload));
 
             try {
                 const response = await fetch('/api/appointments/book', {

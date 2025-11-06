@@ -12,7 +12,7 @@
 <body class="min-h-screen bg-base-200">
 
 <!--navbar-->
-<div th:replace="fragments/navbar::navbar"></div>
+<div th:replace="~{fragments/navbar::navbar}"></div>
 
 <!--services section-->
 <section class="py-12 px-4 bg-base-100">
@@ -28,9 +28,47 @@
     </div>
 </section>
 
+<!-- Login Modal -->
+<div id="login-modal" class="modal">
+    <div class="modal-box">
+        <h3 class="font-bold text-lg mb-4">Login to Continue Booking</h3>
+
+        <form id="login-form">
+            <div class="form-control mb-4">
+                <label class="label"><span class="label-text">Email</span></label>
+                <input type="email" id="login-email" class="input input-bordered w-full" required />
+            </div>
+
+            <div class="form-control mb-6">
+                <label class="label"><span class="label-text">Password</span></label>
+                <input type="password" id="login-password" class="input input-bordered w-full" required />
+            </div>
+
+            <div id="login-error" class="alert alert-error mb-4 hidden">
+                <span id="login-error-msg"></span>
+            </div>
+
+            <div class="flex gap-2">
+                <button type="submit" class="btn btn-primary flex-1">Login</button>
+                <button type="button" id="cancel-login" class="btn flex-1">Cancel</button>
+            </div>
+
+            <div class="mt-4 text-center">
+                <span>you don't have an account? </span>
+                <button type="button"  id="show-register" class="underline text-primary"
+                onclick="window.location.href= '/register'">
+                    Register</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+
+
+
+
 <!--Footer-->
-<div th:replace="fragments/footer ::footer"></div>
-<script>
+<div th:replace="~{fragments/footer :: footer}"></div><script>
     // Define all functions first to avoid reference errors
 
     function setMinDate() {
@@ -115,7 +153,7 @@
             // This will be populated with sessionStorage values by getSelectedServiceIds()
             const idsToSend = serviceIds.length > 0 ? serviceIds : [];
             serviceIdsInput.value = JSON.stringify(idsToSend);
-            console.log("[v0] Set serviceIdsString to:", serviceIdsInput.value);
+            console.log("Set serviceIdsString to:", serviceIdsInput.value);
         }
 
         if (serviceIds.length === 0) {
@@ -271,99 +309,123 @@
 
         console.log("Booking form initialized successfully");
     }
-    function setupFormSubmissionHandlerNew() {
-        const form = document.getElementById('final-booking-form');
-        if (!form) {
-            console.log("Form not found yet, will retry...");
+
+    //check if the user is logged in
+    async function isLoggedIn() {
+        try {
+            const res = await fetch('/api/auth/status', { credentials: 'include' });
+            const data = await res.json();
+            return data.loggedIn === true;
+        } catch {
+            return false;
+        }
+    }
+
+    function showLoginModal() {
+        const modal = document.getElementById('login-modal');
+        modal.classList.add('modal-open');
+
+        // Focus email
+        document.getElementById('login-email').focus();
+    }
+
+    function hideLoginModal() {
+        const modal = document.getElementById('login-modal');
+        modal.classList.remove('modal-open');
+        document.getElementById('login-form').reset();
+        document.getElementById('login-error').classList.add('hidden');
+    }
+
+    // Your original booking function
+    async function submitBooking() {
+        const serviceIds = getSelectedServiceIds();
+        if (serviceIds.length === 0) {
+            alert('Please select at least one service');
             return;
         }
 
-        console.log("Setting up form submission handler...");
+        const form = document.getElementById('final-booking-form');
+        const formData = new FormData(form);
 
-        // Remove HTMX attributes and handle submission manually
-        form.removeAttribute('hx-post');
-        form.removeAttribute('hx-trigger');
-        form.removeAttribute('hx-target');
-        form.removeAttribute('hx-swap');
-        form.removeAttribute('hx-ext');
+        const payload = {
+            serviceIds: serviceIds.map(id => parseInt(id)),
+            employeeId: parseInt(formData.get('employeeId')),
+            locationId: parseInt(formData.get('locationId')),
+            date: formData.get('date'),
+            time: formData.get('time')
+        };
 
-        form.addEventListener('submit', async function(event) {
-            event.preventDefault();
+        try {
+            const res = await fetch('/api/appointments/book', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload),
+                credentials: 'include'  // Sends JWT cookie
+            });
 
-            const serviceIds = getSelectedServiceIds();
-            console.log("[v0] Form submission - serviceIds from sessionStorage:", serviceIds);
+            const result = await res.json();
+            const responseEl = document.getElementById('response');
 
-            if (serviceIds.length === 0) {
-                alert('Please select at least one service');
-                return;
+            if (res.ok) {
+                responseEl.innerHTML = `<div class="alert alert-success">Booking successful!</div>`;
+                form.reset();
+                sessionStorage.removeItem('selectedServiceIds');
+                updateSelectedServicesSummary();
+            } else {
+                responseEl.innerHTML = `<div class="alert alert-error">${result.error}</div>`;
             }
+        } catch (err) {
+            document.getElementById('response').innerHTML = `<div class="alert alert-error">Network error</div>`;
+        }
+    }
 
-            // Get form data
-            const formData = new FormData(form);
+    // Handle login form
+    document.getElementById('login-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
 
-            // Build JSON payload
-            const payload = {
-                serviceIds: serviceIds.map(id => parseInt(id)),
-                employeeId: parseInt(formData.get('employeeId')),
-                locationId: parseInt(formData.get('locationId')),
-                date: formData.get('date'),
-                time: formData.get('time')
-            };
+        const email = document.getElementById('login-email').value;
+        const password = document.getElementById('login-password').value;
+        const errorEl = document.getElementById('login-error');
+        const errorMsg = document.getElementById('login-error-msg');
 
-            console.log("[v0] Sending payload:", JSON.stringify(payload));
+        try {
+            const res = await fetch('/api/auth/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, password }),
+                credentials: 'include'
+            });
 
-            try {
-                const response = await fetch('/api/appointments/book', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify(payload)
-                });
+            const data = await res.json();
 
-                const result = await response.json();
-                const responseElement = document.getElementById('response');
+            if (res.ok) {
+                hideLoginModal();
+                await submitBooking();  // Auto-submit after login
+            } else {
+                errorMsg.textContent = data.error || 'Login failed';
+                errorEl.classList.remove('hidden');
+            }
+        } catch {
+            errorMsg.textContent = 'Network error';
+            errorEl.classList.remove('hidden');
+        }
+    });
 
-                if (response.ok) {
-                    responseElement.innerHTML = `
-                    <div class="alert alert-success">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                        </svg>
-                        <span>${result.message || 'Appointment booked successfully!'}</span>
-                    </div>
-                `;
-                    // redirect if needed and remove the selected services
-                    form.reset();
-                    sessionStorage.removeItem('selectedServiceIds');
-                    updateSelectedServicesSummary();
+    // Cancel button
+    document.getElementById('cancel-login').addEventListener('click', hideLoginModal);
 
-                    // Reset the submit button
-                    const submitBtn = document.getElementById('submit-btn');
-                    if (submitBtn) {
-                        submitBtn.disabled = true;
-                    }
-                } else {
-                    responseElement.innerHTML = `
-                    <div class="alert alert-error">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                        </svg>
-                        <span>${result.error || 'Failed to book appointment'}</span>
-                    </div>
-                `;
-                }
-            } catch (error) {
-                console.error('Error booking appointment:', error);
-                const responseElement = document.getElementById('response');
-                responseElement.innerHTML = `
-                <div class="alert alert-error">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                    </svg>
-                    <span>Network error: ${error.message}</span>
-                </div>
-            `;
+    function setupFormSubmissionHandlerNew() {
+        const form = document.getElementById('final-booking-form');
+        if (!form) return;
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const loggedIn = await isLoggedIn();
+            if (loggedIn) {
+                await submitBooking();
+            } else {
+                showLoginModal();
             }
         });
     }
@@ -393,6 +455,18 @@
 
     // Event listeners
     document.addEventListener('DOMContentLoaded', function() {
+        function isLoggedIn()
+        {
+            return document.cookie.split('; ').some(row=>row.startsWith('jwt='));
+        }
+if(isLoggedIn())
+{
+    console.log("you logged in (jwt cookie found)")
+}
+else
+{
+    console.log("not logged in (no jwt token)")
+}
         document.body.addEventListener('htmx:afterSwap', function(event) {
             if (event.detail.target.id === 'booking-section') {
                 initializeServiceSelection();
