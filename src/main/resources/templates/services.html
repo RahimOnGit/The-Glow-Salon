@@ -3,18 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <title>Salon Services</title>
-    <!-- Tailwind CSS + DaisyUI CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdn.jsdelivr.net/npm/daisyui@4.12.10/dist/full.min.css" rel="stylesheet" type="text/css" />
-    <!-- HTMX -->
     <script src="https://unpkg.com/htmx.org@1.9.10"></script>
     <script src="https://unpkg.com/htmx.org/dist/ext/json-enc.js"></script>
+
 </head>
-<body class="min-h-screen bg-base-200 ">
+<body class="min-h-screen bg-base-200">
 
 <!--navbar-->
-<div th:replace="fragments/navbar::navbar"> </div>
-
+<div th:replace="fragments/navbar::navbar"></div>
 
 <!--services section-->
 <section class="py-12 px-4 bg-base-100">
@@ -26,14 +24,386 @@
             hx-swap="innerHTML"
             class="space-y-4"
     >
-
-        <p  class=" text-center text-gray-500">Loading Services...</p>
+        <p class="text-center text-gray-500">Loading Services...</p>
     </div>
-
 </section>
 
-<!--Footer  -->
+<!--Footer-->
 <div th:replace="fragments/footer ::footer"></div>
+<script>
+    // Define all functions first to avoid reference errors
 
+    function setMinDate() {
+        const dateInput = document.getElementById('date-input');
+        if (!dateInput) return;
+
+        const today = new Date();
+        const yyyy = today.getFullYear();
+        const mm = String(today.getMonth() + 1).padStart(2, '0');
+        const dd = String(today.getDate()).padStart(2, '0');
+        const minDate = `${yyyy}-${mm}-${dd}`;
+        dateInput.min = minDate;
+    }
+
+    function generateTimeGrid() {
+        const timeGrid = document.getElementById('time-grid');
+        if (!timeGrid) return;
+
+        const times = [];
+        for (let hour = 9; hour <= 17; hour++) {
+            times.push(`${hour.toString().padStart(2, '0')}:00`);
+            if (hour < 17) {
+                times.push(`${hour.toString().padStart(2, '0')}:30`);
+            }
+        }
+
+        timeGrid.innerHTML = times.map(time => `
+            <button type="button" class="btn btn-outline btn-sm rounded-full transition-all duration-200 hover:bg-primary hover:text-white"
+                    onclick="selectTime('${time}')">${time}</button>
+        `).join('');
+    }
+
+    function selectTime(time) {
+        document.getElementById('selected-time').value = time;
+        document.getElementById('selected-time-display').textContent = `Selected: ${time}`;
+
+        document.querySelectorAll('#time-grid button').forEach(btn => {
+            btn.classList.remove('btn-primary');
+            if(btn.textContent === time) {
+                btn.classList.add('btn-primary');
+            }
+        });
+
+        triggerAvailableEmployees();
+        checkFormComplete();
+    }
+
+    function getSelectedServiceIds() {
+        const selected = sessionStorage.getItem('selectedServiceIds');
+        return selected ? JSON.parse(selected) : [];
+    }
+
+    function getSelectedServiceDetails() {
+        const serviceIds = getSelectedServiceIds();
+        const serviceCheckboxes = document.querySelectorAll('.service-checkbox');
+
+        return Array.from(serviceCheckboxes)
+            .filter(checkbox => serviceIds.includes(checkbox.value))
+            .map(checkbox => {
+                const label = checkbox.closest('label');
+                const nameElement = label.querySelector('span.font-semibold');
+                const durationElement = label.querySelector('span.text-sm');
+                const priceElement = label.querySelector('span.text-xl');
+
+                return {
+                    id: checkbox.value,
+                    name: nameElement ? nameElement.textContent : 'Service',
+                    duration: parseInt(checkbox.getAttribute('data-duration') || '0'),
+                    price: priceElement ? parseFloat(priceElement.textContent.replace(' kr', '')) : 0
+                };
+            });
+    }
+
+    function updateSelectedServicesSummary() {
+        const serviceIds = getSelectedServiceIds();
+        const summaryElement = document.getElementById('selected-services-summary');
+        const serviceIdsInput = document.getElementById('selected-service-ids');
+
+        if (!summaryElement) return;
+
+        if (serviceIdsInput) {
+            // This will be populated with sessionStorage values by getSelectedServiceIds()
+            const idsToSend = serviceIds.length > 0 ? serviceIds : [];
+            serviceIdsInput.value = JSON.stringify(idsToSend);
+            console.log("[v0] Set serviceIdsString to:", serviceIdsInput.value);
+        }
+
+        if (serviceIds.length === 0) {
+            summaryElement.innerHTML = '<p class="text-gray-500">No services selected</p>';
+            return;
+        }
+
+        const selectedServices = getSelectedServiceDetails();
+        let summaryHTML = '';
+        let totalDuration = 0;
+        let totalPrice = 0;
+
+        selectedServices.forEach(service => {
+            summaryHTML += `
+                <div class="flex justify-between items-center p-2 bg-white rounded border">
+                    <span class="font-medium">${service.name}</span>
+                    <div class="text-right text-sm">
+                        <div>${service.duration} min</div>
+                        <div class="font-bold text-primary">${service.price} kr</div>
+                    </div>
+                </div>
+            `;
+            totalDuration += service.duration;
+            totalPrice += service.price;
+        });
+
+        summaryHTML += `
+            <div class="flex justify-between items-center pt-2 mt-2 border-t border-gray-300 font-bold">
+                <span>Total:</span>
+                <div class="text-right">
+                    <div>${totalDuration} min</div>
+                    <div class="text-primary">${totalPrice} kr</div>
+                </div>
+            </div>
+        `;
+
+        summaryElement.innerHTML = summaryHTML;
+    }
+
+    function triggerAvailableEmployees() {
+        const locationId = document.getElementById('location-select')?.value;
+        const date = document.getElementById('date-input')?.value;
+        const time = document.getElementById('selected-time')?.value;
+        const serviceIds = getSelectedServiceIds();
+
+        if (locationId && date && time && serviceIds.length > 0) {
+            const serviceIdsParam = serviceIds.join(',');
+            const url = `/api/appointments/available-employees?locationId=${locationId}&date=${date}&time=${time}&serviceIds=${serviceIdsParam}`;
+            htmx.ajax('GET', url, {target: '#stylist-select', swap: 'innerHTML'});
+        }
+    }
+
+    function checkFormComplete() {
+        const location = document.getElementById('location-select')?.value;
+        const date = document.getElementById('date-input')?.value;
+        const time = document.getElementById('selected-time')?.value;
+        const stylist = document.getElementById('stylist-select')?.value;
+        const submitBtn = document.getElementById('submit-btn');
+
+        if (submitBtn) {
+            submitBtn.disabled = !(location && date && time && stylist);
+        }
+    }
+
+    function setupFormSubmissionHandler() {
+        const form = document.getElementById('final-booking-form');
+        if (!form) return;
+
+        form.addEventListener('htmx:configRequest', function(event) {
+            // Update serviceIdsString right before submission
+            const serviceIds = getSelectedServiceIds();
+            const serviceIdsInput = document.getElementById('selected-service-ids');
+            if (serviceIdsInput) {
+                serviceIdsInput.value = JSON.stringify(serviceIds);
+                console.log("[v0] Pre-submit serviceIdsString:", serviceIdsInput.value);
+            }
+        });
+    }
+
+    // Service selection functions
+    function initializeServiceSelection() {
+        const serviceForm = document.getElementById('service-selection-form');
+        if (serviceForm) {
+            updateContinueButtonState();
+
+            serviceForm.addEventListener('change', function(e) {
+                if (e.target.classList.contains('service-checkbox')) {
+                    updateContinueButtonState();
+                }
+            });
+        }
+    }
+
+    function updateContinueButtonState() {
+        const serviceCheckBoxes = document.querySelectorAll('.service-checkbox');
+        const isAnyChecked = Array.from(serviceCheckBoxes).some(checkbox => checkbox.checked);
+        const continueButton = document.getElementById('continue-to-booking');
+
+        if (continueButton) {
+            continueButton.disabled = !isAnyChecked;
+        }
+
+        if (isAnyChecked) {
+            const selectedServices = Array.from(serviceCheckBoxes)
+                .filter(cb => cb.checked)
+                .map(cb => cb.value);
+            sessionStorage.setItem('selectedServiceIds', JSON.stringify(selectedServices));
+            console.log("[v0] Services selected and stored:", selectedServices);
+        } else {
+            sessionStorage.removeItem('selectedServiceIds');
+        }
+    }
+    function initializeBookingForm() {
+        console.log("Initializing booking form...");
+
+        setMinDate();
+        generateTimeGrid();
+        updateSelectedServicesSummary();
+
+        // Remove the old setup call and use the new one
+        setupFormSubmissionHandlerNew(); // Use the new function
+
+        const locationSelect = document.getElementById('location-select');
+        const dateInput = document.getElementById('date-input');
+        const stylistSelect = document.getElementById('stylist-select');
+        const timeGrid = document.getElementById('time-grid');
+
+        if (locationSelect) {
+            locationSelect.addEventListener('change', function() {
+                triggerAvailableEmployees();
+                checkFormComplete();
+            });
+        }
+
+        if (dateInput) {
+            dateInput.addEventListener('change', function() {
+                triggerAvailableEmployees();
+                checkFormComplete();
+            });
+        }
+
+        if (stylistSelect) {
+            stylistSelect.addEventListener('change', checkFormComplete);
+        }
+
+        if (timeGrid) {
+            timeGrid.addEventListener('click', function(e) {
+                if (e.target.tagName === 'BUTTON' && e.target.classList.contains('btn-outline')) {
+                    selectTime(e.target.textContent);
+                }
+            });
+        }
+
+        console.log("Booking form initialized successfully");
+    }
+    function setupFormSubmissionHandlerNew() {
+        const form = document.getElementById('final-booking-form');
+        if (!form) {
+            console.log("Form not found yet, will retry...");
+            return;
+        }
+
+        console.log("Setting up form submission handler...");
+
+        // Remove HTMX attributes and handle submission manually
+        form.removeAttribute('hx-post');
+        form.removeAttribute('hx-trigger');
+        form.removeAttribute('hx-target');
+        form.removeAttribute('hx-swap');
+        form.removeAttribute('hx-ext');
+
+        form.addEventListener('submit', async function(event) {
+            event.preventDefault();
+
+            const serviceIds = getSelectedServiceIds();
+            console.log("[v0] Form submission - serviceIds from sessionStorage:", serviceIds);
+
+            if (serviceIds.length === 0) {
+                alert('Please select at least one service');
+                return;
+            }
+
+            // Get form data
+            const formData = new FormData(form);
+
+            // Build JSON payload
+            const payload = {
+                serviceIds: serviceIds.map(id => parseInt(id)),
+                employeeId: parseInt(formData.get('employeeId')),
+                locationId: parseInt(formData.get('locationId')),
+                date: formData.get('date'),
+                time: formData.get('time')
+            };
+
+            console.log("[v0] Sending payload:", JSON.stringify(payload));
+
+            try {
+                const response = await fetch('/api/appointments/book', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                const result = await response.json();
+                const responseElement = document.getElementById('response');
+
+                if (response.ok) {
+                    responseElement.innerHTML = `
+                    <div class="alert alert-success">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                        </svg>
+                        <span>${result.message || 'Appointment booked successfully!'}</span>
+                    </div>
+                `;
+                    // redirect if needed and remove the selected services
+                    form.reset();
+                    sessionStorage.removeItem('selectedServiceIds');
+                    updateSelectedServicesSummary();
+
+                    // Reset the submit button
+                    const submitBtn = document.getElementById('submit-btn');
+                    if (submitBtn) {
+                        submitBtn.disabled = true;
+                    }
+                } else {
+                    responseElement.innerHTML = `
+                    <div class="alert alert-error">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                        <span>${result.error || 'Failed to book appointment'}</span>
+                    </div>
+                `;
+                }
+            } catch (error) {
+                console.error('Error booking appointment:', error);
+                const responseElement = document.getElementById('response');
+                responseElement.innerHTML = `
+                <div class="alert alert-error">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                    <span>Network error: ${error.message}</span>
+                </div>
+            `;
+            }
+        });
+    }
+    // Handle HTMX responses for employee dropdown
+    document.body.addEventListener('htmx:afterRequest', function(e) {
+        if (e.detail.target && e.detail.target.id === 'stylist-select') {
+            try {
+                const employees = JSON.parse(e.detail.xhr.responseText);
+                let options = '<option value="">Select a stylist</option>';
+                if (Array.isArray(employees)) {
+                    employees.forEach(emp => {
+                        options += `<option value="${emp.employeeId}">${emp.name}</option>`;
+                    });
+                }
+                e.detail.target.innerHTML = options;
+                checkFormComplete();
+            } catch (error) {
+                console.error('Error parsing employees:', error);
+                e.detail.target.innerHTML = '<option value="">No available stylists</option>';
+                checkFormComplete();
+            }
+        }
+
+
+
+    });
+
+    // Event listeners
+    document.addEventListener('DOMContentLoaded', function() {
+        document.body.addEventListener('htmx:afterSwap', function(event) {
+            if (event.detail.target.id === 'booking-section') {
+                initializeServiceSelection();
+
+                // Check if the booking form exists and initialize it
+                if (document.getElementById('final-booking-form')) {
+                    initializeBookingForm();
+                }
+            }
+        });
+    });
+</script>
 </body>
 </html>

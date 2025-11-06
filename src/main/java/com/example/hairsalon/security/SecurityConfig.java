@@ -76,6 +76,9 @@ public class SecurityConfig {
                                         "/fragments/**" , "/public/**").permitAll()
                                 .requestMatchers(HttpMethod.POST, "/api/auth/login","/api/auth/register").permitAll()
 //                                .requestMatchers("/", "/login", "/register", "/api/auth/login", "/css/**", "/js/**", "/login.html").permitAll()
+                                .requestMatchers("/api/appointments/available-employees").permitAll()
+                                .requestMatchers("/api/appointments/locations").permitAll()                                .requestMatchers("/api/appointments/book").authenticated()
+
 
                                 .requestMatchers(HttpMethod.GET, "/api/users/**").hasRole("ADMIN")
                                 .requestMatchers(HttpMethod.POST, "/api/appointments/**").hasAnyRole("USER", "ADMIN")
