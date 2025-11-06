@@ -311,35 +311,6 @@
     document.getElementById('stylist-select').addEventListener('change', checkFormComplete);
 
     // Handle response
-    // document.body.addEventListener('htmx:afterRequest', function(e) {
-    //     if (e.detail.elt.id === 'booking-form') {
-    //         if (e.detail.successful) {
-    //             try {
-    //                 const response = JSON.parse(e.detail.xhr.responseText);
-    //                 if (response.appointments && response.appointments.length > 0) {
-    //                     const ids = response.appointments.map(a => a.appointmentId).join(',');
-    //                     window.location.href = `/confirmation?appointmentIds=${ids}`;
-    //                 } else {
-    //                     document.getElementById('response').innerHTML =
-    //                         `<div class="alert alert-error shadow-lg">${response.error || 'Booking failed'}</div>`;
-    //                 }
-    //             } catch (error) {
-    //                 // If response is not JSON, assume success
-    //                 window.location.href = '/dashboard';
-    //             }
-    //         } else {
-    //             try {
-    //                 const response = JSON.parse(e.detail.xhr.responseText);
-    //                 document.getElementById('response').innerHTML =
-    //                     `<div class="alert alert-error shadow-lg">${response.error || 'An error occurred'}</div>`;
-    //             } catch (error) {
-    //                 document.getElementById('response').innerHTML =
-    //                     `<div class="alert alert-error shadow-lg">An error occurred while booking</div>`;
-    //             }
-    //         }
-    //     }
-    // });
-
     document.body.addEventListener('htmx:afterRequest', function(e) {
         if (e.detail.elt.id === 'booking-form') {
             if (e.detail.successful) {
