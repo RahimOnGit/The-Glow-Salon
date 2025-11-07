@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="lofi">
+<head>
+    <meta charset="UTF-8">
+    <title>Booking Confirmation - The Glow Salon</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/daisyui@4.12.10/dist/full.min.css" rel="stylesheet" type="text/css" />
+</head>
+<body class="min-h-screen bg-gradient-to-br from-green-50 to-base-200">
+<header class="shadow-lg bg-base-100">
+    <div class="navbar shadow">
+        <div class="navbar-start">
+            <a href="/" class="btn btn-ghost text-xl">The Glow Salon</a>
+        </div>
+        <div class="navbar-end px-6">
+            <a href="/dashboard" class="btn btn-ghost">Dashboard</a>
+            <form action="/logout" method="post" class="m-0 inline">
+                <button type="submit" class="btn btn-primary rounded-full">Logout</button>
+            </form>
+        </div>
+    </div>
+</header>
+
+<section class="py-12 px-4" th:if="${appointment}">
+    <div class="card bg-base-100 shadow-xl max-w-4xl mx-auto">
+        <div class="card-body p-8 text-center">
+            <div class="mb-6">
+                <div class="avatar">
+                    <div class="w-24 rounded-full bg-success">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 stroke-current text-white" fill="none" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                    </div>
+                </div>
+                <h2 class="text-3xl font-bold text-success mt-4">Booking Confirmed!</h2>
+                <p class="text-base-content/70">Your appointment has been successfully scheduled.</p>
+            </div>
+
+            <!-- Display selected services -->
+            <div class="grid md:grid-cols-2 gap-4 mb-6">
+                <div class="card bg-base-200 shadow">
+                    <div class="card-body">
+                        <h3 class="card-title">Selected Services:</h3>
+                        <th:block th:each="service : ${services}">
+                            <p class="mb-2"><strong th:text="${service.name}">Service Name</strong> - <span th:text="${service.price} + ' SEK'">Price</span></p>
+                        </th:block>
+                    </div>
+                </div>
+                <div class="card bg-base-200 shadow">
+                    <div class="card-body">
+                        <p><strong>Date:</strong> <span th:text="${date}"></span></p>
+                        <p><strong>Time:</strong> <span th:text="${time}"></span></p>
+                        <p><strong>Stylist:</strong> <span th:text="${stylistName}">Stylist Name</span></p>
+                        <p><strong>Location:</strong> <span th:text="${location}"></span></p>
+                        <p><strong>Total Duration:</strong> <span th:text="${totalDuration} + ' minutes'"></span></p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="alert alert-success shadow-lg mb-6">
+                <span><strong>Total Cost:</strong> <span th:text="${totalPrice} + ' SEK'"></span></span>
+            </div>
+
+            <div class="card-actions justify-center">
+                <a href="/dashboard" class="btn btn-primary rounded-full">Go to Dashboard</a>
+                <a href="/salon/services" class="btn btn-ghost">Book More</a>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Error message if no appointment -->
+<div th:if="${error}" class="py-12 px-4">
+    <div class="alert alert-error">
+        <span th:text="${error}">Booking error</span>
+    </div>
+    <a href="/salon/services" class="btn btn-primary">Try Again</a>
+</div>
+
+<div th:replace="~{fragments/footer :: footer}"></div>
+</body>
+</html>
