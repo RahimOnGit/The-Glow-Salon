@@ -1,6 +1,7 @@
 package com.example.hairsalon.controller;
 
 import com.example.hairsalon.entity.User;
+import com.example.hairsalon.security.JwtUtils;
 import com.example.hairsalon.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;

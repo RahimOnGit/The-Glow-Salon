@@ -35,8 +35,8 @@ public class LoginController {
     @PostMapping("/login-success")
     public String loginSuccess() {
         return """
-    <div hx-redirect="/dashboard"> </div>
-    <script> window.location.href= '/dashboard';</script>
+    <div hx-redirect="/salon/services"> </div>
+    <script> window.location.href= '/salon/services';</script>
     """;
 
     }
@@ -75,7 +75,7 @@ public class LoginController {
             if ("admin".equals(user.getRole())) {
                 return "adminDashboard";  // Serves adminDashboard.html
             } else {
-                return "dashboard";  // Serves dashboard.html for other users
+                return "salon/services";  // Serves dashboard.html for other users
             }
         } else {
             // Log error and redirect to login

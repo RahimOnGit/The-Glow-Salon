@@ -1,10 +1,15 @@
 package com.example.hairsalon.entity;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import jakarta.persistence.ManyToMany;
+import java.util.ArrayList;
+import java.util.List;
+
 
 @Entity
 @Table(name = "Services")
@@ -33,4 +38,9 @@ public class Service {
     @DecimalMax(value = "10000.0", message = "Price cannot exceed 10000")
     @Column(nullable = false)
     private Double price;
+
+    @ManyToMany(mappedBy = "services")
+    @JsonBackReference
+    private List<Appointment> appointments = new ArrayList<>();
+
 }
