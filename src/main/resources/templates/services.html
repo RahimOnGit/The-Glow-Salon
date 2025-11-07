@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="lofi">
+<head>
+    <meta charset="UTF-8">
+    <title>Salon Services</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/daisyui@4.12.10/dist/full.min.css" rel="stylesheet" type="text/css" />
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+    <script src="https://unpkg.com/htmx.org/dist/ext/json-enc.js"></script>
+
+</head>
+<body class="min-h-screen bg-base-200">
+
+<!--navbar-->
+<div th:replace="~{fragments/navbar::navbar}"></div>
+
+<!--services section-->
+<section class="py-12 px-4 bg-base-100">
+    <div
+            id="booking-section"
+            hx-get="/service-list-fragment"
+            hx-trigger="load"
+            hx-target="#booking-section"
+            hx-swap="innerHTML"
+            class="space-y-4"
+    >
+        <p class="text-center text-gray-500">Loading Services...</p>
+    </div>
+</section>
+
+<!-- Login Modal -->
+<div id="login-modal" class="modal">
+    <div class="modal-box">
+        <h3 class="font-bold text-lg mb-4">Login to Continue Booking</h3>
+
+        <form id="login-form">
+            <div class="form-control mb-4">
+                <label class="label"><span class="label-text">Email</span></label>
+                <input type="email" id="login-email" class="input input-bordered w-full" required />
+            </div>
+
+            <div class="form-control mb-6">
+                <label class="label"><span class="label-text">Password</span></label>
+                <input type="password" id="login-password" class="input input-bordered w-full" required />
+            </div>
+
+            <div id="login-error" class="alert alert-error mb-4 hidden">
+                <span id="login-error-msg"></span>
+            </div>
+
+            <div class="flex gap-2">
+                <button type="submit" class="btn btn-primary flex-1">Login</button>
+                <button type="button" id="cancel-login" class="btn flex-1">Cancel</button>
+            </div>
+
+            <div class="mt-4 text-center">
+                <span>you don't have an account? </span>
+                <button type="button"  id="show-register" class="underline text-primary"
+                onclick="window.location.href= '/register'">
+                    Register</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+
+
+
+
+<!--Footer-->
+<div th:replace="~{fragments/footer :: footer}"></div><script>
+    // Define all functions first to avoid reference errors
+
+    function setMinDate() {
+        const dateInput = document.getElementById('date-input');
+        if (!dateInput) return;
+
+        const today = new Date();
+        const yyyy = today.getFullYear();
+        const mm = String(today.getMonth() + 1).padStart(2, '0');
+        const dd = String(today.getDate()).padStart(2, '0');
+        const minDate = `${yyyy}-${mm}-${dd}`;
+        dateInput.min = minDate;
+    }
+
+    function generateTimeGrid() {
+        const timeGrid = document.getElementById('time-grid');
+        if (!timeGrid) return;
+
+        const times = [];
+        for (let hour = 9; hour <= 17; hour++) {
+            times.push(`${hour.toString().padStart(2, '0')}:00`);
+            if (hour < 17) {
+                times.push(`${hour.toString().padStart(2, '0')}:30`);
+            }
+        }
+
+        timeGrid.innerHTML = times.map(time => `
+            <button type="button" class="btn btn-outline btn-sm rounded-full transition-all duration-200 hover:bg-primary hover:text-white"
+                    onclick="selectTime('${time}')">${time}</button>
+        `).join('');
+    }
+
+    function selectTime(time) {
+        document.getElementById('selected-time').value = time;
+        document.getElementById('selected-time-display').textContent = `Selected: ${time}`;
+
+        document.querySelectorAll('#time-grid button').forEach(btn => {
+            btn.classList.remove('btn-primary');
+            if(btn.textContent === time) {
+                btn.classList.add('btn-primary');
+            }
+        });
+
+        triggerAvailableEmployees();
+        checkFormComplete();
+    }
+
+    function getSelectedServiceIds() {
+        const selected = sessionStorage.getItem('selectedServiceIds');
+        return selected ? JSON.parse(selected) : [];
+    }
+
+    function getSelectedServiceDetails() {
+        const serviceIds = getSelectedServiceIds();
+        const serviceCheckboxes = document.querySelectorAll('.service-checkbox');
+
+        return Array.from(serviceCheckboxes)
+            .filter(checkbox => serviceIds.includes(checkbox.value))
+            .map(checkbox => {
+                const label = checkbox.closest('label');
+                const nameElement = label.querySelector('span.font-semibold');
+                const durationElement = label.querySelector('span.text-sm');
+                const priceElement = label.querySelector('span.text-xl');
+
+                return {
+                    id: checkbox.value,
+                    name: nameElement ? nameElement.textContent : 'Service',
+                    duration: parseInt(checkbox.getAttribute('data-duration') || '0'),
+                    price: priceElement ? parseFloat(priceElement.textContent.replace(' kr', '')) : 0
+                };
+            });
+    }
+
+    function updateSelectedServicesSummary() {
+        const serviceIds = getSelectedServiceIds();
+        const summaryElement = document.getElementById('selected-services-summary');
+        const serviceIdsInput = document.getElementById('selected-service-ids');
+
+        if (!summaryElement) return;
+
+        if (serviceIdsInput) {
+            // This will be populated with sessionStorage values by getSelectedServiceIds()
+            const idsToSend = serviceIds.length > 0 ? serviceIds : [];
+            serviceIdsInput.value = JSON.stringify(idsToSend);
+            console.log("Set serviceIdsString to:", serviceIdsInput.value);
+        }
+
+        if (serviceIds.length === 0) {
+            summaryElement.innerHTML = '<p class="text-gray-500">No services selected</p>';
+            return;
+        }
+
+        const selectedServices = getSelectedServiceDetails();
+        let summaryHTML = '';
+        let totalDuration = 0;
+        let totalPrice = 0;
+
+        selectedServices.forEach(service => {
+            summaryHTML += `
+                <div class="flex justify-between items-center p-2 bg-white rounded border">
+                    <span class="font-medium">${service.name}</span>
+                    <div class="text-right text-sm">
+                        <div>${service.duration} min</div>
+                        <div class="font-bold text-primary">${service.price} kr</div>
+                    </div>
+                </div>
+            `;
+            totalDuration += service.duration;
+            totalPrice += service.price;
+        });
+
+        summaryHTML += `
+            <div class="flex justify-between items-center pt-2 mt-2 border-t border-gray-300 font-bold">
+                <span>Total:</span>
+                <div class="text-right">
+                    <div>${totalDuration} min</div>
+                    <div class="text-primary">${totalPrice} kr</div>
+                </div>
+            </div>
+        `;
+
+        summaryElement.innerHTML = summaryHTML;
+    }
+
+    function triggerAvailableEmployees() {
+        const locationId = document.getElementById('location-select')?.value;
+        const date = document.getElementById('date-input')?.value;
+        const time = document.getElementById('selected-time')?.value;
+        const serviceIds = getSelectedServiceIds();
+
+        if (locationId && date && time && serviceIds.length > 0) {
+            const serviceIdsParam = serviceIds.join(',');
+            const url = `/api/appointments/available-employees?locationId=${locationId}&date=${date}&time=${time}&serviceIds=${serviceIdsParam}`;
+            htmx.ajax('GET', url, {target: '#stylist-select', swap: 'innerHTML'});
+        }
+    }
+
+    function checkFormComplete() {
+        const location = document.getElementById('location-select')?.value;
+        const date = document.getElementById('date-input')?.value;
+        const time = document.getElementById('selected-time')?.value;
+        const stylist = document.getElementById('stylist-select')?.value;
+        const submitBtn = document.getElementById('submit-btn');
+
+        if (submitBtn) {
+            submitBtn.disabled = !(location && date && time && stylist);
+        }
+    }
+
+    function setupFormSubmissionHandler() {
+        const form = document.getElementById('final-booking-form');
+        if (!form) return;
+
+        form.addEventListener('htmx:configRequest', function(event) {
+            // Update serviceIdsString right before submission
+            const serviceIds = getSelectedServiceIds();
+            const serviceIdsInput = document.getElementById('selected-service-ids');
+            if (serviceIdsInput) {
+                serviceIdsInput.value = JSON.stringify(serviceIds);
+                console.log("[v0] Pre-submit serviceIdsString:", serviceIdsInput.value);
+            }
+        });
+    }
+
+    // Service selection functions
+    function initializeServiceSelection() {
+        const serviceForm = document.getElementById('service-selection-form');
+        if (serviceForm) {
+            updateContinueButtonState();
+
+            serviceForm.addEventListener('change', function(e) {
+                if (e.target.classList.contains('service-checkbox')) {
+                    updateContinueButtonState();
+                }
+            });
+        }
+    }
+
+    function updateContinueButtonState() {
+        const serviceCheckBoxes = document.querySelectorAll('.service-checkbox');
+        const isAnyChecked = Array.from(serviceCheckBoxes).some(checkbox => checkbox.checked);
+        const continueButton = document.getElementById('continue-to-booking');
+
+        if (continueButton) {
+            continueButton.disabled = !isAnyChecked;
+        }
+
+        if (isAnyChecked) {
+            const selectedServices = Array.from(serviceCheckBoxes)
+                .filter(cb => cb.checked)
+                .map(cb => cb.value);
+            sessionStorage.setItem('selectedServiceIds', JSON.stringify(selectedServices));
+            console.log("[v0] Services selected and stored:", selectedServices);
+        } else {
+            sessionStorage.removeItem('selectedServiceIds');
+        }
+    }
+    function initializeBookingForm() {
+        console.log("Initializing booking form...");
+
+        setMinDate();
+        generateTimeGrid();
+        updateSelectedServicesSummary();
+
+        // Remove the old setup call and use the new one
+        setupFormSubmissionHandlerNew(); // Use the new function
+
+        const locationSelect = document.getElementById('location-select');
+        const dateInput = document.getElementById('date-input');
+        const stylistSelect = document.getElementById('stylist-select');
+        const timeGrid = document.getElementById('time-grid');
+
+        if (locationSelect) {
+            locationSelect.addEventListener('change', function() {
+                triggerAvailableEmployees();
+                checkFormComplete();
+            });
+        }
+
+        if (dateInput) {
+            dateInput.addEventListener('change', function() {
+                triggerAvailableEmployees();
+                checkFormComplete();
+            });
+        }
+
+        if (stylistSelect) {
+            stylistSelect.addEventListener('change', checkFormComplete);
+        }
+
+        if (timeGrid) {
+            timeGrid.addEventListener('click', function(e) {
+                if (e.target.tagName === 'BUTTON' && e.target.classList.contains('btn-outline')) {
+                    selectTime(e.target.textContent);
+                }
+            });
+        }
+
+        console.log("Booking form initialized successfully");
+    }
+
+    //check if the user is logged in
+    async function isLoggedIn() {
+        try {
+            const res = await fetch('/api/auth/status', { credentials: 'include' });
+            const data = await res.json();
+            return data.loggedIn === true;
+        } catch {
+            return false;
+        }
+    }
+
+    function showLoginModal() {
+        const modal = document.getElementById('login-modal');
+        modal.classList.add('modal-open');
+
+        // Focus email
+        document.getElementById('login-email').focus();
+    }
+
+    function hideLoginModal() {
+        const modal = document.getElementById('login-modal');
+        modal.classList.remove('modal-open');
+        document.getElementById('login-form').reset();
+        document.getElementById('login-error').classList.add('hidden');
+    }
+
+    // Your original booking function
+    async function submitBooking() {
+        const serviceIds = getSelectedServiceIds();
+        if (serviceIds.length === 0) {
+            alert('Please select at least one service');
+            return;
+        }
+
+        const form = document.getElementById('final-booking-form');
+        const formData = new FormData(form);
+
+        const payload = {
+            serviceIds: serviceIds.map(id => parseInt(id)),
+            employeeId: parseInt(formData.get('employeeId')),
+            locationId: parseInt(formData.get('locationId')),
+            date: formData.get('date'),
+            time: formData.get('time')
+        };
+
+        try {
+            const res = await fetch('/api/appointments/book', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload),
+                credentials: 'include'  // Sends JWT cookie
+            });
+
+            const result = await res.json();
+            const responseEl = document.getElementById('response');
+
+            if (res.ok) {
+                responseEl.innerHTML = `<div class="alert alert-success">Booking successful!</div>`;
+                form.reset();
+                sessionStorage.removeItem('selectedServiceIds');
+                updateSelectedServicesSummary();
+            } else {
+                responseEl.innerHTML = `<div class="alert alert-error">${result.error}</div>`;
+            }
+        } catch (err) {
+            document.getElementById('response').innerHTML = `<div class="alert alert-error">Network error</div>`;
+        }
+    }
+
+    // Handle login form
+    document.getElementById('login-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const email = document.getElementById('login-email').value;
+        const password = document.getElementById('login-password').value;
+        const errorEl = document.getElementById('login-error');
+        const errorMsg = document.getElementById('login-error-msg');
+
+        try {
+            const res = await fetch('/api/auth/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, password }),
+                credentials: 'include'
+            });
+
+            const data = await res.json();
+
+            if (res.ok) {
+                hideLoginModal();
+                await submitBooking();  // Auto-submit after login
+            } else {
+                errorMsg.textContent = data.error || 'Login failed';
+                errorEl.classList.remove('hidden');
+            }
+        } catch {
+            errorMsg.textContent = 'Network error';
+            errorEl.classList.remove('hidden');
+        }
+    });
+
+    // Cancel button
+    document.getElementById('cancel-login').addEventListener('click', hideLoginModal);
+
+    function setupFormSubmissionHandlerNew() {
+        const form = document.getElementById('final-booking-form');
+        if (!form) return;
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const loggedIn = await isLoggedIn();
+            if (loggedIn) {
+                await submitBooking();
+            } else {
+                showLoginModal();
+            }
+        });
+    }
+    // Handle HTMX responses for employee dropdown
+    document.body.addEventListener('htmx:afterRequest', function(e) {
+        if (e.detail.target && e.detail.target.id === 'stylist-select') {
+            try {
+                const employees = JSON.parse(e.detail.xhr.responseText);
+                let options = '<option value="">Select a stylist</option>';
+                if (Array.isArray(employees)) {
+                    employees.forEach(emp => {
+                        options += `<option value="${emp.employeeId}">${emp.name}</option>`;
+                    });
+                }
+                e.detail.target.innerHTML = options;
+                checkFormComplete();
+            } catch (error) {
+                console.error('Error parsing employees:', error);
+                e.detail.target.innerHTML = '<option value="">No available stylists</option>';
+                checkFormComplete();
+            }
+        }
+
+
+
+    });
+
+    // Event listeners
+    document.addEventListener('DOMContentLoaded', function() {
+        function isLoggedIn()
+        {
+            return document.cookie.split('; ').some(row=>row.startsWith('jwt='));
+        }
+if(isLoggedIn())
+{
+    console.log("you logged in (jwt cookie found)")
+}
+else
+{
+    console.log("not logged in (no jwt token)")
+}
+        document.body.addEventListener('htmx:afterSwap', function(event) {
+            if (event.detail.target.id === 'booking-section') {
+                initializeServiceSelection();
+
+                // Check if the booking form exists and initialize it
+                if (document.getElementById('final-booking-form')) {
+                    initializeBookingForm();
+                }
+            }
+        });
+    });
+</script>
+</body>
+</html>
