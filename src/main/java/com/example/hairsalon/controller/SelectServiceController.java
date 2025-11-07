@@ -7,9 +7,6 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
-import java.util.List;
-import java.util.stream.Collectors;
-
 @Controller
 @RequestMapping("/salon")
 public class SelectServiceController {
@@ -18,11 +15,11 @@ public class SelectServiceController {
     private ServiceService serviceService;
 
     @PostMapping("/select-service")
-    public String selectService(@RequestParam("serviceIds") List<Long> serviceIds) {
-        if (serviceIds.isEmpty()) {
-            return "redirect:/salon/services?error=No service selected";
+    public String selectService(@RequestParam("serviceId") Long serviceId) {
+        if (!serviceService.existsById(serviceId)) {
+            // Handle error, perhaps redirect with error
+            return "redirect:/salon/services?error=Service not found";
         }
-        String idsStr = serviceIds.stream().map(String::valueOf).collect(Collectors.joining(","));
-        return "redirect:/salon/booking?serviceIds=" + idsStr;
+        return "redirect:/salon/booking?serviceId=" + serviceId;
     }
 }

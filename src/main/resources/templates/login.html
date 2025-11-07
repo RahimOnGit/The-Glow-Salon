@@ -13,9 +13,12 @@
     <link href="https://cdn.jsdelivr.net/npm/daisyui@4.12.10/dist/full.min.css" rel="stylesheet" type="text/css" />
 
 </head>
-<body class="min-h-screen bg-base-200 flex items-center justify-center">
+<body class="min-h-screen bg-base-200 ">
+<div th:replace="fragments/navbar::navbar" class="mb-8"> </div>
 
-<div class="card w-96 bg-base-100 shadow-xl">
+<section class="flex items-center justify-center my-10">
+
+<div class="card w-96 bg-base-100 shadow-xl ">
     <div class="card-body">
         <h2 class="card-title justify-center text-2xl mb-4">Login to The Glow Salon</h2>
 
@@ -72,6 +75,10 @@
         </div>
     </div>
 </div>
+</section>
+
+<div th:replace="fragments/footer::footer">
+</div>
 
 <script>
 
@@ -86,11 +93,23 @@
                 const response = JSON.parse(evt.detail.xhr.responseText);
                 const token = response.token;
 
-
                 localStorage.setItem('jwtToken', token);
+                const payload = JSON.parse(atob(token.split('.')[1]));
 
-                // Redirect the user to the dashboard
-                window.location.href = '/dashboard';
+
+                if (payload.role==='admin') {
+
+                    // Redirect the user to the services
+                    window.location.href = 'dashboard';
+                }
+                else if (payload.role==='customer') {
+                    window.location.href = 'salon/services';
+                }
+
+                else {
+                    console.warn('Unknown role:', payload.role);
+                }
+
 
             } catch (e) {
                 console.error("Login Success Handler Error:", e);

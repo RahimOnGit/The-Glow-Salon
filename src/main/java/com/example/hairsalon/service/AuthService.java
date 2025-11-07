@@ -1,23 +1,21 @@
 package com.example.hairsalon.service;
 
-
 import com.example.hairsalon.dto.RegisterRequest;
 import com.example.hairsalon.entity.User;
 import com.example.hairsalon.repository.UserRepository;
 import com.example.hairsalon.security.JwtUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.Optional;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 @Service
 public class AuthService {
 
     private static final Logger logger = LoggerFactory.getLogger(AuthService.class);
-
 
     @Autowired
     private UserRepository userRepository;
@@ -27,6 +25,7 @@ public class AuthService {
 
     @Autowired
     private JwtUtils jwtUtils;
+
     public User register(RegisterRequest request) {
         logger.debug("Attempting registration for email: {}", request.getEmail());
 
@@ -44,8 +43,6 @@ public class AuthService {
         user.setEmail(request.getEmail());
         user.setPhone(request.getPhone());
         user.setPassword(passwordEncoder.encode(request.getPassword()));
-//        user.setRole(request.getRole() != null ? request.getRole() : "USER");
-        // visitCount defaults to 0 in entity
 
         // Validate and set role: must be one of 'admin', 'employee', 'customer'. Default to 'customer'
         String role = request.getRole();
@@ -54,23 +51,11 @@ public class AuthService {
         }
         user.setRole(role);
 
-        // visitCount defaults to 0 in entity
+        // Set visitCount to 1 on registration (first visit)
+        user.setVisitCount(1);
 
         User savedUser = userRepository.save(user);
         logger.debug("User registered successfully: {}", savedUser.getEmail());
-
-        // Optionally increment visit count on registration (e.g., first visit)
-        savedUser.setVisitCount(1);
-        userRepository.save(savedUser);
-
-
-
-//        User savedUser = userRepository.save(user);
-//        logger.debug("User registered successfully: {}", savedUser.getEmail());
-//
-//        // Optionally increment visit count on registration (e.g., first visit)
-//        savedUser.setVisitCount(1);
-//        userRepository.save(savedUser);
 
         return savedUser;
     }
@@ -91,14 +76,10 @@ public class AuthService {
         }
         logger.debug("Password matched for user {}.", email);
 
-
+        // Increment visit count on login
         user.setVisitCount(user.getVisitCount() + 1);
         userRepository.save(user);
 
-
         return jwtUtils.generateToken(user);
     }
-
 }
-
-

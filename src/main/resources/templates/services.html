@@ -2,136 +2,476 @@
 <html lang="en" data-theme="lofi">
 <head>
     <meta charset="UTF-8">
-    <title>Services - The Glow Salon</title>
-    <!-- Tailwind CSS + DaisyUI CDN -->
+    <title>Salon Services</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdn.jsdelivr.net/npm/daisyui@4.12.10/dist/full.min.css" rel="stylesheet" type="text/css" />
-    <!-- HTMX -->
     <script src="https://unpkg.com/htmx.org@1.9.10"></script>
-
-    <style>
-        html, body {
-            height: 100%;
-        }
-        body {
-            display: flex;
-            flex-direction: column;
-        }
-        main {
-            flex: 1 0 auto;
-        }
-        footer {
-            flex-shrink: 0;
-        }
-    </style>
+    <script src="https://unpkg.com/htmx.org/dist/ext/json-enc.js"></script>
 
 </head>
 <body class="min-h-screen bg-base-200">
-<header class="shadow">
-    <div class="navbar shadow">
-        <div class="navbar-start">
-            <a href="/" class="btn btn-ghost text-xl">The Glow Salon</a>
-        </div>
-        <div class="navbar-center hidden lg:flex">
-            <ul class="menu menu-horizontal px-1">
-                <li><a href="/">Home</a></li>
-                <li><a href="">Services</a></li>
-                <li><a href="">Contact</a></li>
-            </ul>
-        </div>
-        <div class="navbar-end px-6">
-            <a href="/dashboard" class="btn btn-ghost">Dashboard</a>
-            <form action="/logout" method="post" class="m-0 inline">
-                <button type="submit" class="btn btn-primary rounded">Logout</button>
-            </form>
-        </div>
-    </div>
-</header>
 
-<!-- Services Section -->
+<!--navbar-->
+<div th:replace="~{fragments/navbar::navbar}"></div>
+
+<!--services section-->
 <section class="py-12 px-4 bg-base-100">
-    <h2 class="text-2xl text-center mb-6 font-bold">Select our service</h2>
-    <form method="post" action="/salon/select-service">
-        <div id="service-list" hx-get="/service-view" hx-trigger="load" hx-target="#service-list" hx-swap="innerHTML" class="space-y-4 max-w-xl mx-auto">
-            <p class="text-center text-gray-500">Loading Services...</p>
-        </div>
-        <div class="text-center mt-6">
-            <button type="submit" class="btn btn-primary" disabled id="next-btn">Next</button>
-            <div th:if="${error}" class="alert alert-error mt-4" th:text="${error}">Selection Error</div>
-        </div>
-    </form>
+    <div
+            id="booking-section"
+            hx-get="/service-list-fragment"
+            hx-trigger="load"
+            hx-target="#booking-section"
+            hx-swap="innerHTML"
+            class="space-y-4"
+    >
+        <p class="text-center text-gray-500">Loading Services...</p>
+    </div>
 </section>
 
-<!-- Footer -->
-<footer class="footer bg-base-300 text-base-content p-10 mt-auto">
-    <div class="container mx-auto">
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div>
-                <h2 class="text-2xl font-bold text-primary mb-4">Glow Studio</h2>
-                <p class="max-w-xs">Making you glow in every cut. Experience luxury beauty treatments with our expert team.</p>
-                <div class="flex mt-6 space-x-4">
-                    <a class="btn btn-circle btn-sm bg-black hover:bg-gray-800 border-0">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" class="fill-current text-white">
-                            <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
-                        </svg>
-                    </a>
-                    <a class="btn btn-circle btn-sm btn-primary">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" class="fill-current">
-                            <path d="M19.615 3.184c-3.604-.246-11.631-.245-15.23 0-3.897.266-4.356 2.62-4.385 8.816.029 6.185.484 8.549 4.385 8.816 3.6.245 11.626.246 15.23 0 3.897-.266 4.356-2.62 4.385-8.816-.029-6.185-.484-8.549-4.385-8.816zm-10.615 12.816v-8l8 3.993-8 4.007z"></path>
-                        </svg>
-                    </a>
-                    <a class="btn btn-circle btn-sm btn-primary">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" class="fill-current">
-                            <path d="M9 8h-3v4h3v12h5v-12h3.642l.358-4h-4v-1.667c0-.955.192-1.333 1.115-1.333h2.885v-5h-3.808c-3.596 0-5.192 1.583-5.192 4.615v3.385z"></path>
-                        </svg>
-                    </a>
-                </div>
-            </div>
-            <div>
-                <h3 class="footer-title">Quick Links</h3>
-                <a class="link link-hover block mb-2">Home</a>
-                <a class="link link-hover block mb-2">Services</a>
-                <a class="link link-hover block mb-2">Book Now</a>
-                <a class="link link-hover block mb-2">About Us</a>
-                <a class="link link-hover block">Gallery</a>
-            </div>
-            <div>
-                <h3 class="footer-title">Contact Us</h3>
-                <p class="mb-2 flex items-center">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                    </svg>
-                    admin@glowsalon.com
-                </p>
-                <p class="mb-2 flex items-center">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
-                    </svg>
-                    071234567
-                </p>
-                <p class="flex items-center">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                    </svg>
-                    123 Beauty Street, Glamour City
-                </p>
-            </div>
-        </div>
-    </div>
-</footer>
+<!-- Login Modal -->
+<div id="login-modal" class="modal">
+    <div class="modal-box">
+        <h3 class="font-bold text-lg mb-4">Login to Continue Booking</h3>
 
-<!-- Copyright -->
-<p class="text-center py-4 bg-base-300 text-sm text-gray-500">2025 Glow Salon. All rights reserved</p>
+        <form id="login-form">
+            <div class="form-control mb-4">
+                <label class="label"><span class="label-text">Email</span></label>
+                <input type="email" id="login-email" class="input input-bordered w-full" required />
+            </div>
+
+            <div class="form-control mb-6">
+                <label class="label"><span class="label-text">Password</span></label>
+                <input type="password" id="login-password" class="input input-bordered w-full" required />
+            </div>
+
+            <div id="login-error" class="alert alert-error mb-4 hidden">
+                <span id="login-error-msg"></span>
+            </div>
+
+            <div class="flex gap-2">
+                <button type="submit" class="btn btn-primary flex-1">Login</button>
+                <button type="button" id="cancel-login" class="btn flex-1">Cancel</button>
+            </div>
+
+            <div class="mt-4 text-center">
+                <span>you don't have an account? </span>
+                <button type="button"  id="show-register" class="underline text-primary"
+                onclick="window.location.href= '/register'">
+                    Register</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+
+
+
+
+<!--Footer-->
+<div th:replace="~{fragments/footer :: footer}"></div>
 
 <script>
-    // Enable Next button when at least one service is selected
-    document.addEventListener('change', function(e) {
-        if (e.target.name === 'serviceIds') {
-            const checkedCount = document.querySelectorAll('input[name="serviceIds"]:checked').length;
-            document.getElementById('next-btn').disabled = checkedCount === 0;
+    // Helper functions (unchanged)
+    function setMinDate() {
+        const dateInput = document.getElementById('date-input');
+        if (!dateInput) return;
+
+        const today = new Date();
+        const yyyy = today.getFullYear();
+        const mm = String(today.getMonth() + 1).padStart(2, '0');
+        const dd = String(today.getDate()).padStart(2, '0');
+        const minDate = `${yyyy}-${mm}-${dd}`;
+        dateInput.min = minDate;
+    }
+
+    function generateTimeGrid() {
+        const timeGrid = document.getElementById('time-grid');
+        if (!timeGrid) return;
+
+        const times = [];
+        for (let hour = 9; hour <= 17; hour++) {
+            times.push(`${hour.toString().padStart(2, '0')}:00`);
+            if (hour < 17) {
+                times.push(`${hour.toString().padStart(2, '0')}:30`);
+            }
         }
+
+        timeGrid.innerHTML = times.map(time => `
+            <button type="button" class="btn btn-outline btn-sm rounded-full transition-all duration-200 hover:bg-primary hover:text-white"
+                    onclick="selectTime('${time}')">${time}</button>
+        `).join('');
+    }
+
+    function selectTime(time) {
+        document.getElementById('selected-time').value = time;
+        document.getElementById('selected-time-display').textContent = `Selected: ${time}`;
+
+        document.querySelectorAll('#time-grid button').forEach(btn => {
+            btn.classList.remove('btn-primary');
+            if (btn.textContent === time) {
+                btn.classList.add('btn-primary');
+            }
+        });
+
+        triggerAvailableEmployees();
+        checkFormComplete();
+        updateSelectedServicesSummary();  // Update summary when time changes
+    }
+
+    function getSelectedServiceIds() {
+        const selected = sessionStorage.getItem('selectedServiceIds');
+        return selected ? JSON.parse(selected) : [];
+    }
+
+    // UPDATED: getSelectedServiceDetails - Fallback to stored details if DOM is empty
+    function getSelectedServiceDetails() {
+        const storedDetails = sessionStorage.getItem('selectedServicesDetails');
+        if (storedDetails) {
+            console.log('Using stored service details from sessionStorage');
+            return JSON.parse(storedDetails);
+        }
+
+        // Fallback to DOM query (for initial selection page)
+        const serviceIds = getSelectedServiceIds();
+        const serviceCheckboxes = document.querySelectorAll('.service-checkbox');
+
+        if (serviceCheckboxes.length === 0 && serviceIds.length > 0) {
+            console.warn('DOM checkboxes not found, but IDs exist - relying on stored details');
+            return [];  // Will be caught by storedDetails above
+        }
+
+        const details = Array.from(serviceCheckboxes)
+            .filter(checkbox => serviceIds.includes(checkbox.value))
+            .map(checkbox => {
+                const label = checkbox.closest('label');
+                const nameElement = label.querySelector('span.font-semibold');
+                const durationElement = label.querySelector('span.text-sm');
+                const priceElement = label.querySelector('span.text-xl');
+
+                return {
+                    id: checkbox.value,
+                    name: nameElement ? nameElement.textContent : 'Service',
+                    duration: parseInt(checkbox.getAttribute('data-duration') || '0'),
+                    price: parseFloat(priceElement ? priceElement.textContent.replace(' SEK', '') : 0)
+                };
+            });
+
+        // If details found, store them for later use
+        if (details.length > 0) {
+            sessionStorage.setItem('selectedServicesDetails', JSON.stringify(details));
+        }
+
+        return details;
+    }
+
+    // UPDATED: updateSelectedServicesSummary - Now uses stored/fallback details
+    function updateSelectedServicesSummary() {
+        const serviceIds = getSelectedServiceIds();
+        const summaryElement = document.getElementById('selected-services-summary');
+        const selectedTime = document.getElementById('selected-time')?.value || 'Not selected';
+        const selectedStylist = document.getElementById('stylist-select')?.options[document.getElementById('stylist-select')?.selectedIndex]?.text || 'Select date and time first';
+
+        if (!summaryElement) {
+            console.warn('Summary element not found');
+            return;
+        }
+
+        console.log('Updating summary - Service IDs:', serviceIds, 'Time:', selectedTime, 'Stylist:', selectedStylist);
+
+        if (serviceIds.length === 0) {
+            summaryElement.innerHTML = '<p class="text-gray-500">No services selected</p>';
+            return;
+        }
+
+        const selectedServices = getSelectedServiceDetails();
+        console.log('Fetched service details:', selectedServices);
+
+        if (selectedServices.length === 0) {
+            summaryElement.innerHTML = '<p class="text-yellow-500">Services selected but details not loaded. Please select again.</p>';
+            return;
+        }
+
+        let summaryHTML = '<h4 class="font-bold mb-2">Selected Services:</h4>';
+        let totalDuration = 0;
+        let totalPrice = 0;
+
+        selectedServices.forEach(service => {
+            summaryHTML += `
+                <div class="flex justify-between items-center p-2 bg-white rounded border mb-2">
+                    <span class="font-medium">${service.name}</span>
+                    <div class="text-right text-sm">
+                        <div>${service.duration} minutes</div>
+                        <div class="font-bold text-primary">${service.price} SEK</div>
+                    </div>
+                </div>
+            `;
+            totalDuration += service.duration;
+            totalPrice += service.price;
+        });
+
+        summaryHTML += `
+            <div class="flex justify-between items-center pt-2 mt-2 border-t border-gray-300 font-bold">
+                <span>Total:</span>
+                <div class="text-right">
+                    <div>${totalDuration} minutes</div>
+                    <div class="text-primary">${totalPrice} SEK</div>
+                </div>
+            </div>
+            <div class="mt-4 p-2 bg-blue-50 rounded">
+                <p><strong>Selected Time:</strong> ${selectedTime}</p>
+                <p><strong>Stylist:</strong> ${selectedStylist}</p>
+            </div>
+        `;
+
+        summaryElement.innerHTML = summaryHTML;
+        console.log('Summary updated successfully');
+    }
+
+    function triggerAvailableEmployees() {
+        const locationId = document.getElementById('location-select')?.value;
+        const date = document.getElementById('date-input')?.value;
+        const time = document.getElementById('selected-time')?.value;
+        const serviceIds = getSelectedServiceIds();
+
+        if (locationId && date && time && serviceIds.length > 0) {
+            const serviceIdsParam = serviceIds.join(',');
+            const url = `/api/appointments/available-employees?locationId=${locationId}&date=${date}&time=${time}&serviceIds=${serviceIdsParam}`;
+            htmx.ajax('GET', url, {target: '#stylist-select', swap: 'innerHTML'});
+        }
+    }
+
+    function checkFormComplete() {
+        const location = document.getElementById('location-select')?.value;
+        const date = document.getElementById('date-input')?.value;
+        const time = document.getElementById('selected-time')?.value;
+        const stylist = document.getElementById('stylist-select')?.value;
+        const submitBtn = document.getElementById('submit-btn');
+
+        if (submitBtn) {
+            submitBtn.disabled = !(location && date && time && stylist);
+        }
+    }
+
+    // UPDATED: updateContinueButtonState - Now saves FULL details to sessionStorage
+    function updateContinueButtonState() {
+        const serviceCheckBoxes = document.querySelectorAll('.service-checkbox');
+        const isAnyChecked = Array.from(serviceCheckBoxes).some(checkbox => checkbox.checked);
+        const continueButton = document.getElementById('continue-to-booking');
+
+        if (continueButton) {
+            continueButton.disabled = !isAnyChecked;
+        }
+
+        if (isAnyChecked) {
+            const selectedServices = Array.from(serviceCheckBoxes)
+                .filter(cb => cb.checked)
+                .map(cb => {
+                    const label = cb.closest('label');
+                    const nameElement = label.querySelector('span.font-semibold');
+                    const durationElement = label.querySelector('span.text-sm');
+                    const priceElement = label.querySelector('span.text-xl');
+
+                    return {
+                        id: cb.value,
+                        name: nameElement ? nameElement.textContent : 'Service',
+                        duration: parseInt(cb.getAttribute('data-duration') || '0'),
+                        price: parseFloat(priceElement ? priceElement.textContent.replace(' SEK', '') : 0)
+                    };
+                });
+
+            // Save IDs and FULL details to sessionStorage
+            sessionStorage.setItem('selectedServiceIds', JSON.stringify(selectedServices.map(s => s.id)));
+            sessionStorage.setItem('selectedServicesDetails', JSON.stringify(selectedServices));
+            console.log('Full service details saved to sessionStorage:', selectedServices);
+        } else {
+            sessionStorage.removeItem('selectedServiceIds');
+            sessionStorage.removeItem('selectedServicesDetails');
+        }
+    }
+
+    // UPDATED: submitBooking - Enhanced with logs, auth check, and error handling
+    async function submitBooking() {
+        const serviceIds = getSelectedServiceIds();
+        if (serviceIds.length === 0) {
+            alert('Please select at least one service');
+            return;
+        }
+
+        const form = document.getElementById('final-booking-form');
+        if (!form) {
+            alert('Booking form not found');
+            return;
+        }
+
+        const formData = new FormData(form);
+        const payload = {
+            serviceIds: serviceIds.map(id => parseInt(id)),
+            employeeId: parseInt(formData.get('employeeId')),
+            locationId: parseInt(formData.get('locationId')),
+            date: formData.get('date'),
+            time: formData.get('time')
+        };
+
+        console.log('Submitting booking payload:', payload);
+
+        // FIXED: Reliable auth check via /api/auth/status (server reads HttpOnly cookie)
+        try {
+            console.log('Checking auth status...');
+            const authRes = await fetch('/api/auth/status', { credentials: 'include' });
+            const authData = await authRes.json();
+            console.log('Auth status:', authData);
+
+            if (!authData.loggedIn) {
+                alert('Session expired. Please log in again to book an appointment.');
+                window.location.href = '/login?redirect=/salon/services';
+                return;
+            }
+            console.log('User authenticated - proceeding with booking');
+        } catch (authErr) {
+            console.error('Auth check failed:', authErr);
+            alert('Unable to verify login. Please log in again.');
+            window.location.href = '/login?redirect=/salon/services';
+            return;
+        }
+
+        try {
+            const res = await fetch('/api/appointments/book', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload),
+                credentials: 'include'  // Ensures HttpOnly cookie is sent
+            });
+
+            console.log('Booking response status:', res.status);
+
+            if (res.ok) {
+                const result = await res.json();
+                console.log('Booking success:', result);
+                // Clear sessionStorage on success
+                sessionStorage.removeItem('selectedServiceIds');
+                sessionStorage.removeItem('selectedServicesDetails');
+                // Redirect to confirmation
+                window.location.href = `/confirmation?appointmentId=${result.appointmentId}`;
+            } else {
+                // FIXED: Handle 401 specifically (Unauthorized)
+                if (res.status === 401) {
+                    console.error('Unauthorized - redirecting to login');
+                    alert('Authentication failed. Please log in again.');
+                    window.location.href = '/login?redirect=/salon/services';
+                    return;
+                }
+
+                const result = await res.text();
+                console.error('Booking failed:', res.status, result);
+                const responseEl = document.getElementById('response');
+                if (responseEl) {
+                    responseEl.innerHTML = `<div class="alert alert-error">Booking failed: ${result || 'Unknown error (Status: ' + res.status + ')'}</div>`;
+                } else {
+                    alert(`Booking failed: ${result || 'Unknown error (Status: ' + res.status + ')'}`);
+                }
+                // Stay on page - no redirect on other errors
+            }
+        } catch (err) {
+            console.error('Network error in booking:', err);
+            const responseEl = document.getElementById('response');
+            if (responseEl) {
+                responseEl.innerHTML = `<div class="alert alert-error">Network error: ${err.message}</div>`;
+            } else {
+                alert(`Network error: ${err.message}`);
+            }
+        }
+    }
+
+    function setupFormSubmissionHandlerNew() {
+        const form = document.getElementById('final-booking-form');
+        if (!form) return;
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            await submitBooking();
+        });
+
+        // Update summary on changes
+        document.getElementById('selected-time')?.addEventListener('change', updateSelectedServicesSummary);
+        document.getElementById('stylist-select')?.addEventListener('change', updateSelectedServicesSummary);
+    }
+
+    function initializeServiceSelection() {
+        const serviceForm = document.getElementById('service-selection-form');
+        if (!serviceForm) return;
+
+        updateContinueButtonState();  // Initial state
+
+        // Attach change listeners to checkboxes
+        const checkboxes = serviceForm.querySelectorAll('.service-checkbox');
+        checkboxes.forEach(cb => cb.addEventListener('change', updateContinueButtonState));
+
+        console.log('Service selection initialized');
+    }
+
+    function initializeBookingForm() {
+        console.log("Initializing booking form...");
+        setMinDate();
+        generateTimeGrid();
+        updateSelectedServicesSummary();  // FIXED: Call this immediately to load from sessionStorage
+        setupFormSubmissionHandlerNew();
+
+        // Event listeners (unchanged)
+        const locationSelect = document.getElementById('location-select');
+        const dateInput = document.getElementById('date-input');
+        const stylistSelect = document.getElementById('stylist-select');
+
+        if (locationSelect) locationSelect.addEventListener('change', () => { triggerAvailableEmployees(); checkFormComplete(); updateSelectedServicesSummary(); });
+        if (dateInput) dateInput.addEventListener('change', () => { triggerAvailableEmployees(); checkFormComplete(); updateSelectedServicesSummary(); });
+        if (stylistSelect) stylistSelect.addEventListener('change', () => { checkFormComplete(); updateSelectedServicesSummary(); });
+
+        console.log("Booking form initialized - Summary updated from storage");
+    }
+
+    // Main setup
+    document.addEventListener('DOMContentLoaded', function() {
+        initializeServiceSelection();
+        if (document.getElementById('final-booking-form')) {
+            initializeBookingForm();
+        }
+
+        // Re-init after HTMX swaps
+        document.body.addEventListener('htmx:afterSwap', function(event) {
+            if (event.detail.target.id === 'booking-section') {
+                console.log('HTMX swap - re-initializing');
+                setTimeout(() => {  // Delay to ensure DOM is ready
+                    if (document.getElementById('service-selection-form')) {
+                        initializeServiceSelection();
+                    }
+                    if (document.getElementById('final-booking-form')) {
+                        initializeBookingForm();
+                    }
+                }, 100);
+            }
+        });
+
+        // HTMX afterRequest for stylists (unchanged, but with name fix)
+        document.body.addEventListener('htmx:afterRequest', function(e) {
+            if (e.detail.target && e.detail.target.id === 'stylist-select') {
+                try {
+                    const employees = JSON.parse(e.detail.xhr.responseText);
+                    let options = '<option value="">Select a stylist</option>';
+                    if (Array.isArray(employees)) {
+                        employees.forEach(emp => {
+                            options += `<option value="${emp.employeeId}">${emp.firstName} ${emp.lastName}</option>`;
+                        });
+                    }
+                    e.detail.target.innerHTML = options;
+                    checkFormComplete();
+                    updateSelectedServicesSummary();  // Update after stylists load
+                } catch (error) {
+                    console.error('Error parsing employees:', error);
+                    e.detail.target.innerHTML = '<option value="">No available stylists</option>';
+                }
+            }
+        });
     });
 </script>
+
 </body>
 </html>

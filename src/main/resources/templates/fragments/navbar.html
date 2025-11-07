@@ -1,0 +1,56 @@
+<header class="shadow-inner py-3" th:fragment="navbar">
+    <div class="navbar">
+        <div class="navbar-start">
+            <a href="/" class="btn btn-ghost text-3xl">The Glow Salon</a>
+        </div>
+        <div class="navbar-center hidden lg:flex">
+            <ul class="menu menu-horizontal px-1 text-lg">
+                <li><a href="/">Home</a></li>
+                <li><a href="/salon/services">Services</a></li>
+                <li><a href="/salon/services">Booking</a></li>
+                <li><a href="">Contact</a></li>
+            </ul>
+        </div>
+        <div class="navbar-end px-6">
+            <a href="/login" id="login-link" class="btn btn-primary rounded hidden">Login</a>
+            <a href="/logout" id="logout-link" class="btn btn-primary rounded hidden">Logout</a>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+
+            fetch("/api/auth/status")
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    console.log("Auth status received:", data);
+                    const loginLink = document.getElementById("login-link");
+                    const logoutLink = document.getElementById("logout-link");
+
+                    if (data.loggedIn) {
+                        console.log("User is logged in, showing logout button");
+                        if (loginLink) loginLink.classList.add("hidden");
+                        if (logoutLink) logoutLink.classList.remove("hidden");
+                    } else {
+                        console.log("User is not logged in, showing login button");
+                        if (loginLink) loginLink.classList.remove("hidden");
+                        if (logoutLink) logoutLink.classList.add("hidden");
+                    }
+                })
+                .catch(error => {
+                    console.error("Error checking auth status:", error);
+                    // Fallback: show login button
+                    const loginLink = document.getElementById("login-link");
+                    const logoutLink = document.getElementById("logout-link");
+                    if (loginLink) loginLink.classList.remove("hidden");
+                    if (logoutLink) logoutLink.classList.add("hidden");
+                });
+        });
+    </script>
+
+</header>

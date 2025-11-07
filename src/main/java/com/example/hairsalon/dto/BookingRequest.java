@@ -1,7 +1,5 @@
 package com.example.hairsalon.dto;
 
-import jakarta.validation.constraints.Future;
-import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
@@ -11,19 +9,19 @@ import java.util.List;
 
 @Data
 public class BookingRequest {
-    @NotNull(message = "Location ID is required")
-    private Long locationId;
+    private List<Long> serviceIds;
 
-    @NotNull(message = "Employee ID is required")
+    private String serviceIdsString; // Can be null if serviceIds is provided
+
+    @NotNull
     private Long employeeId;
 
-    @NotNull(message = "Date is required")
-    @Future(message = "Date must be in the future")
+    @NotNull
+    private Long locationId;
+
+    @NotNull
     private LocalDate date;
 
-    @NotNull(message = "Time is required")
+    @NotNull
     private LocalTime time;
-
-    @NotEmpty(message = "At least one service is required")
-    private List<Long> serviceIds;
 }

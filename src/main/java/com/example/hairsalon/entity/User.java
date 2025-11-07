@@ -32,7 +32,8 @@ public class User {
     private String password;
 
     @Column(nullable = false)
-//    private String role = "USER";
     private String role = "customer";
+
+    @Column(nullable = false)
     private Integer visitCount = 0;
 }

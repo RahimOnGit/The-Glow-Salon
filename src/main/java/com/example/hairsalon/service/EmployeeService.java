@@ -1,6 +1,7 @@
 package com.example.hairsalon.service;
 
 import com.example.hairsalon.entity.Appointment;
+import com.example.hairsalon.entity.AppointmentStatus;
 import com.example.hairsalon.entity.Employee;
 import com.example.hairsalon.entity.Location;
 import com.example.hairsalon.repository.AppointmentRepository;
@@ -44,14 +45,17 @@ public class EmployeeService {
                 .collect(Collectors.toList());
     }
 
-    public boolean hasTimeConflict(Employee employee, LocalDate date, LocalTime startTime, int duration) {
+    private boolean hasTimeConflict(Employee employee, LocalDate date, LocalTime startTime, int duration) {
         List<Appointment> existing = appointmentRepository.findByEmployeeAndDate(employee, date);
         LocalTime endTime = startTime.plusMinutes(duration);
-        return existing.stream()
-                .filter(a -> "scheduled".equals(a.getStatus()))
-                .anyMatch(a -> {
-                    LocalTime aEndTime = a.getTime().plusMinutes(a.getService().getDuration());
-                    return startTime.isBefore(aEndTime) && endTime.isAfter(a.getTime());
-                });
+
+        for (Appointment a : existing) {
+            if (!AppointmentStatus.PENDING.equals(a.getStatus())) continue;
+            LocalTime aEndTime = a.getTime().plusMinutes(a.getTotalDuration());
+            if (startTime.isBefore(aEndTime) && endTime.isAfter(a.getTime())) {
+                return true;
+            }
+        }
+        return false;
     }
 }

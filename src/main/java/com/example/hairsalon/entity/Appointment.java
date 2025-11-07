@@ -1,6 +1,7 @@
 package com.example.hairsalon.entity;
 
 import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -9,6 +10,8 @@ import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "Appointments")
@@ -22,22 +25,26 @@ public class Appointment {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
-    @JsonManagedReference
+    @JsonIgnore
     private User user;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "employee_id")
-    @JsonManagedReference
+    @JsonIgnore
     private Employee employee;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "service_id")
-    @JsonManagedReference
-    private Service service;
+    @ManyToMany(fetch = FetchType.EAGER)
+    @JoinTable(
+            name = "appointment_services",
+            joinColumns = @JoinColumn(name = "appointment_id"),
+            inverseJoinColumns = @JoinColumn(name = "service_id")
+    )
+
+    private List<Service> services = new ArrayList<>();
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "location_id")
-    @JsonManagedReference
+    @JsonIgnore
     private Location location;
 
     @Column(nullable = false)
@@ -49,4 +56,12 @@ public class Appointment {
     @Column(nullable = false)
     @Enumerated(EnumType.STRING)
     private AppointmentStatus status = AppointmentStatus.PENDING;
+
+    public int getTotalDuration() {
+        return services.stream().mapToInt(Service::getDuration).sum();
+    }
+
+    public double getTotalPrice() {
+        return services.stream().mapToDouble(Service::getPrice).sum();
+    }
 }

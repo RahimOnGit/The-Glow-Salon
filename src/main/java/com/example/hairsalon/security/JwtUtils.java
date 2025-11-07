@@ -90,4 +90,20 @@ public class JwtUtils {
         byte[] keyBytes = Decoders.BASE64.decode(jwtSecret);
         return Keys.hmacShaKeyFor(keyBytes);
     }
+
+    public boolean isTokenValid(String token)
+    {
+        try {
+            Jwts.parserBuilder()
+                    .setSigningKey(getSignInKey())
+                    .build()
+                    .parseClaimsJws(token);
+            return true;
+        }
+        catch (JwtException | IllegalArgumentException e) {
+            logger.error(" invalid JWT token : {} ",e.getMessage());
+        return false;
+        }
+
+    }
 }
