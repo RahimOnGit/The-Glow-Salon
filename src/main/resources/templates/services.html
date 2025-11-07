@@ -114,18 +114,32 @@
 
         triggerAvailableEmployees();
         checkFormComplete();
+        updateSelectedServicesSummary();
     }
-
+//----
     function getSelectedServiceIds() {
         const selected = sessionStorage.getItem('selectedServiceIds');
         return selected ? JSON.parse(selected) : [];
     }
 
+
     function getSelectedServiceDetails() {
+        const storedDetails = sessionStorage.getItem('selectedServicesDetails');
+        if (storedDetails) {
+            console.log('Using stored service details from sessionStorage');
+            return JSON.parse(storedDetails);
+        }
+
+        // Fallback to DOM query (for initial selection page)
         const serviceIds = getSelectedServiceIds();
         const serviceCheckboxes = document.querySelectorAll('.service-checkbox');
 
-        return Array.from(serviceCheckboxes)
+        if (serviceCheckboxes.length === 0 && serviceIds.length > 0) {
+            console.warn('DOM checkboxes not found, but IDs exist - relying on stored details');
+            return [];  // Will be caught by storedDetails above
+        }
+
+        const details = Array.from(serviceCheckboxes)
             .filter(checkbox => serviceIds.includes(checkbox.value))
             .map(checkbox => {
                 const label = checkbox.closest('label');
@@ -137,24 +151,34 @@
                     id: checkbox.value,
                     name: nameElement ? nameElement.textContent : 'Service',
                     duration: parseInt(checkbox.getAttribute('data-duration') || '0'),
-                    price: priceElement ? parseFloat(priceElement.textContent.replace(' kr', '')) : 0
+                    price: parseFloat(priceElement ? priceElement.textContent.replace(' SEK', '') : 0)
                 };
             });
+
+        // If details found, store them for later use
+        if (details.length > 0) {
+            sessionStorage.setItem('selectedServicesDetails', JSON.stringify(details));
+        }
+
+        return details;
     }
 
+
+
+
+    //selected service summary
     function updateSelectedServicesSummary() {
         const serviceIds = getSelectedServiceIds();
         const summaryElement = document.getElementById('selected-services-summary');
-        const serviceIdsInput = document.getElementById('selected-service-ids');
+        const selectedTime = document.getElementById('selected-time')?.value || 'Not selected';
+        const selectedStylist = document.getElementById('stylist-select')?.options[document.getElementById('stylist-select')?.selectedIndex]?.text || 'Select date and time first';
 
-        if (!summaryElement) return;
-
-        if (serviceIdsInput) {
-            // This will be populated with sessionStorage values by getSelectedServiceIds()
-            const idsToSend = serviceIds.length > 0 ? serviceIds : [];
-            serviceIdsInput.value = JSON.stringify(idsToSend);
-            console.log("Set serviceIdsString to:", serviceIdsInput.value);
+        if (!summaryElement) {
+            console.warn('Summary element not found');
+            return;
         }
+
+        console.log('Updating summary - Service IDs:', serviceIds, 'Time:', selectedTime, 'Stylist:', selectedStylist);
 
         if (serviceIds.length === 0) {
             summaryElement.innerHTML = '<p class="text-gray-500">No services selected</p>';
@@ -162,17 +186,24 @@
         }
 
         const selectedServices = getSelectedServiceDetails();
-        let summaryHTML = '';
+        console.log('Fetched service details:', selectedServices);
+
+        if (selectedServices.length === 0) {
+            summaryElement.innerHTML = '<p class="text-yellow-500">Services selected but details not loaded. Please select again.</p>';
+            return;
+        }
+
+        let summaryHTML = '<h4 class="font-bold mb-2">Selected Services:</h4>';
         let totalDuration = 0;
         let totalPrice = 0;
 
         selectedServices.forEach(service => {
             summaryHTML += `
-                <div class="flex justify-between items-center p-2 bg-white rounded border">
+                <div class="flex justify-between items-center p-2 bg-white rounded border mb-2">
                     <span class="font-medium">${service.name}</span>
                     <div class="text-right text-sm">
-                        <div>${service.duration} min</div>
-                        <div class="font-bold text-primary">${service.price} kr</div>
+                        <div>${service.duration} minutes</div>
+                        <div class="font-bold text-primary">${service.price} SEK</div>
                     </div>
                 </div>
             `;
@@ -184,14 +215,21 @@
             <div class="flex justify-between items-center pt-2 mt-2 border-t border-gray-300 font-bold">
                 <span>Total:</span>
                 <div class="text-right">
-                    <div>${totalDuration} min</div>
-                    <div class="text-primary">${totalPrice} kr</div>
+                    <div>${totalDuration} minutes</div>
+                    <div class="text-primary">${totalPrice} SEK</div>
                 </div>
+            </div>
+            <div class="mt-4 p-2 bg-blue-50 rounded">
+                <p><strong>Selected Time:</strong> ${selectedTime}</p>
+                <p><strong>Stylist:</strong> ${selectedStylist}</p>
             </div>
         `;
 
         summaryElement.innerHTML = summaryHTML;
+        console.log('Summary updated successfully');
     }
+
+
 
     function triggerAvailableEmployees() {
         const locationId = document.getElementById('location-select')?.value;
@@ -218,35 +256,24 @@
         }
     }
 
-    function setupFormSubmissionHandler() {
-        const form = document.getElementById('final-booking-form');
-        if (!form) return;
 
-        form.addEventListener('htmx:configRequest', function(event) {
-            // Update serviceIdsString right before submission
-            const serviceIds = getSelectedServiceIds();
-            const serviceIdsInput = document.getElementById('selected-service-ids');
-            if (serviceIdsInput) {
-                serviceIdsInput.value = JSON.stringify(serviceIds);
-                console.log("[v0] Pre-submit serviceIdsString:", serviceIdsInput.value);
-            }
-        });
-    }
+
 
     // Service selection functions
     function initializeServiceSelection() {
         const serviceForm = document.getElementById('service-selection-form');
-        if (serviceForm) {
-            updateContinueButtonState();
+        if (!serviceForm) return;
 
-            serviceForm.addEventListener('change', function(e) {
-                if (e.target.classList.contains('service-checkbox')) {
-                    updateContinueButtonState();
-                }
-            });
-        }
+        updateContinueButtonState();  // Initial state
+
+        // Attach change listeners to checkboxes
+        const checkboxes = serviceForm.querySelectorAll('.service-checkbox');
+        checkboxes.forEach(cb => cb.addEventListener('change', updateContinueButtonState));
+
+        console.log('Service selection initialized');
     }
 
+//update state of the button (contiune to booking)
     function updateContinueButtonState() {
         const serviceCheckBoxes = document.querySelectorAll('.service-checkbox');
         const isAnyChecked = Array.from(serviceCheckBoxes).some(checkbox => checkbox.checked);
@@ -259,56 +286,33 @@
         if (isAnyChecked) {
             const selectedServices = Array.from(serviceCheckBoxes)
                 .filter(cb => cb.checked)
-                .map(cb => cb.value);
-            sessionStorage.setItem('selectedServiceIds', JSON.stringify(selectedServices));
-            console.log("[v0] Services selected and stored:", selectedServices);
+                .map(cb => {
+                    const label = cb.closest('label');
+                    const nameElement = label.querySelector('span.font-semibold');
+                    const durationElement = label.querySelector('span.text-sm');
+                    const priceElement = label.querySelector('span.text-xl');
+
+                    return {
+                        id: cb.value,
+                        name: nameElement ? nameElement.textContent : 'Service',
+                        duration: parseInt(cb.getAttribute('data-duration') || '0'),
+                        price: parseFloat(priceElement ? priceElement.textContent.replace(' SEK', '') : 0)
+                    };
+                });
+
+            // Save IDs and FULL details to sessionStorage
+            sessionStorage.setItem('selectedServiceIds', JSON.stringify(selectedServices.map(s => s.id)));
+            sessionStorage.setItem('selectedServicesDetails', JSON.stringify(selectedServices));
+            console.log('Full service details saved to sessionStorage:', selectedServices);
         } else {
             sessionStorage.removeItem('selectedServiceIds');
+            sessionStorage.removeItem('selectedServicesDetails');
         }
     }
-    function initializeBookingForm() {
-        console.log("Initializing booking form...");
 
-        setMinDate();
-        generateTimeGrid();
-        updateSelectedServicesSummary();
 
-        // Remove the old setup call and use the new one
-        setupFormSubmissionHandlerNew(); // Use the new function
 
-        const locationSelect = document.getElementById('location-select');
-        const dateInput = document.getElementById('date-input');
-        const stylistSelect = document.getElementById('stylist-select');
-        const timeGrid = document.getElementById('time-grid');
 
-        if (locationSelect) {
-            locationSelect.addEventListener('change', function() {
-                triggerAvailableEmployees();
-                checkFormComplete();
-            });
-        }
-
-        if (dateInput) {
-            dateInput.addEventListener('change', function() {
-                triggerAvailableEmployees();
-                checkFormComplete();
-            });
-        }
-
-        if (stylistSelect) {
-            stylistSelect.addEventListener('change', checkFormComplete);
-        }
-
-        if (timeGrid) {
-            timeGrid.addEventListener('click', function(e) {
-                if (e.target.tagName === 'BUTTON' && e.target.classList.contains('btn-outline')) {
-                    selectTime(e.target.textContent);
-                }
-            });
-        }
-
-        console.log("Booking form initialized successfully");
-    }
 
     //check if the user is logged in
     async function isLoggedIn() {
@@ -345,8 +349,12 @@
         }
 
         const form = document.getElementById('final-booking-form');
-        const formData = new FormData(form);
+        if (!form) {
+            alert('Booking form not found');
+            return;
+        }
 
+        const formData = new FormData(form);
         const payload = {
             serviceIds: serviceIds.map(id => parseInt(id)),
             employeeId: parseInt(formData.get('employeeId')),
@@ -355,27 +363,73 @@
             time: formData.get('time')
         };
 
+        console.log('Submitting booking payload:', payload);
+
+        // FIXED: Reliable auth check via /api/auth/status (server reads HttpOnly cookie)
+        try {
+            console.log('Checking auth status...');
+            const authRes = await fetch('/api/auth/status', { credentials: 'include' });
+            const authData = await authRes.json();
+            console.log('Auth status:', authData);
+
+            if (!authData.loggedIn) {
+                alert('Session expired. Please log in again to book an appointment.');
+                window.location.href = '/login?redirect=/salon/services';
+                return;
+            }
+            console.log('User authenticated - proceeding with booking');
+        } catch (authErr) {
+            console.error('Auth check failed:', authErr);
+            alert('Unable to verify login. Please log in again.');
+            window.location.href = '/login?redirect=/salon/services';
+            return;
+        }
+
         try {
             const res = await fetch('/api/appointments/book', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload),
-                credentials: 'include'  // Sends JWT cookie
+                credentials: 'include'  // Ensures HttpOnly cookie is sent
             });
 
-            const result = await res.json();
-            const responseEl = document.getElementById('response');
+            console.log('Booking response status:', res.status);
 
             if (res.ok) {
-                responseEl.innerHTML = `<div class="alert alert-success">Booking successful!</div>`;
-                form.reset();
+                const result = await res.json();
+                console.log('Booking success:', result);
+                // Clear sessionStorage on success
                 sessionStorage.removeItem('selectedServiceIds');
-                updateSelectedServicesSummary();
+                sessionStorage.removeItem('selectedServicesDetails');
+                // Redirect to confirmation
+                window.location.href = `/confirmation?appointmentId=${result.appointmentId}`;
             } else {
-                responseEl.innerHTML = `<div class="alert alert-error">${result.error}</div>`;
+                // FIXED: Handle 401 specifically (Unauthorized)
+                if (res.status === 401) {
+                    console.error('Unauthorized - redirecting to login');
+                    alert('Authentication failed. Please log in again.');
+                    window.location.href = '/login?redirect=/salon/services';
+                    return;
+                }
+
+                const result = await res.text();
+                console.error('Booking failed:', res.status, result);
+                const responseEl = document.getElementById('response');
+                if (responseEl) {
+                    responseEl.innerHTML = `<div class="alert alert-error">Booking failed: ${result || 'Unknown error (Status: ' + res.status + ')'}</div>`;
+                } else {
+                    alert(`Booking failed: ${result || 'Unknown error (Status: ' + res.status + ')'}`);
+                }
+                // Stay on page - no redirect on other errors
             }
         } catch (err) {
-            document.getElementById('response').innerHTML = `<div class="alert alert-error">Network error</div>`;
+            console.error('Network error in booking:', err);
+            const responseEl = document.getElementById('response');
+            if (responseEl) {
+                responseEl.innerHTML = `<div class="alert alert-error">Network error: ${err.message}</div>`;
+            } else {
+                alert(`Network error: ${err.message}`);
+            }
         }
     }
 
@@ -413,7 +467,17 @@
 
     // Cancel button
     document.getElementById('cancel-login').addEventListener('click', hideLoginModal);
-
+    // function setupFormSubmissionHandlerNew() {
+    //     const form = document.getElementById('final-booking-form');
+    //     if (!form) return;
+    //
+    //     form.addEventListener('submit', async (e) => {
+    //         e.preventDefault();
+    //         await submitBooking();
+    //     });
+    //
+    //     // Update summary on changes
+    //      }
     function setupFormSubmissionHandlerNew() {
         const form = document.getElementById('final-booking-form');
         if (!form) return;
@@ -428,6 +492,9 @@
                 showLoginModal();
             }
         });
+        document.getElementById('selected-time')?.addEventListener('change', updateSelectedServicesSummary);
+        document.getElementById('stylist-select')?.addEventListener('change', updateSelectedServicesSummary);
+
     }
     // Handle HTMX responses for employee dropdown
     document.body.addEventListener('htmx:afterRequest', function(e) {
@@ -453,27 +520,65 @@
 
     });
 
-    // Event listeners
+
+
+    function initializeBookingForm() {
+        console.log("Initializing booking form...");
+        setMinDate();
+        generateTimeGrid();
+        updateSelectedServicesSummary();  // FIXED: Call this immediately to load from sessionStorage
+        setupFormSubmissionHandlerNew();
+
+        // Event listeners (unchanged)
+        const locationSelect = document.getElementById('location-select');
+        const dateInput = document.getElementById('date-input');
+        const stylistSelect = document.getElementById('stylist-select');
+
+        if (locationSelect) locationSelect.addEventListener('change', () => { triggerAvailableEmployees(); checkFormComplete(); updateSelectedServicesSummary(); });
+        if (dateInput) dateInput.addEventListener('change', () => { triggerAvailableEmployees(); checkFormComplete(); updateSelectedServicesSummary(); });
+        if (stylistSelect) stylistSelect.addEventListener('change', () => { checkFormComplete(); updateSelectedServicesSummary(); });
+
+        console.log("Booking form initialized - Summary updated from storage");
+    }
+//main set up
     document.addEventListener('DOMContentLoaded', function() {
-        function isLoggedIn()
-        {
-            return document.cookie.split('; ').some(row=>row.startsWith('jwt='));
+        initializeServiceSelection();
+        if (document.getElementById('final-booking-form')) {
+            initializeBookingForm();
         }
-if(isLoggedIn())
-{
-    console.log("you logged in (jwt cookie found)")
-}
-else
-{
-    console.log("not logged in (no jwt token)")
-}
+
+        // Re-init after HTMX swaps
         document.body.addEventListener('htmx:afterSwap', function(event) {
             if (event.detail.target.id === 'booking-section') {
-                initializeServiceSelection();
+                console.log('HTMX swap - re-initializing');
+                setTimeout(() => {  // Delay to ensure DOM is ready
+                    if (document.getElementById('service-selection-form')) {
+                        initializeServiceSelection();
+                    }
+                    if (document.getElementById('final-booking-form')) {
+                        initializeBookingForm();
+                    }
+                }, 100);
+            }
+        });
 
-                // Check if the booking form exists and initialize it
-                if (document.getElementById('final-booking-form')) {
-                    initializeBookingForm();
+        // HTMX afterRequest for stylists (unchanged, but with name fix)
+        document.body.addEventListener('htmx:afterRequest', function(e) {
+            if (e.detail.target && e.detail.target.id === 'stylist-select') {
+                try {
+                    const employees = JSON.parse(e.detail.xhr.responseText);
+                    let options = '<option value="">Select a stylist</option>';
+                    if (Array.isArray(employees)) {
+                        employees.forEach(emp => {
+                            options += `<option value="${emp.employeeId}">${emp.firstName} ${emp.lastName}</option>`;
+                        });
+                    }
+                    e.detail.target.innerHTML = options;
+                    checkFormComplete();
+                    updateSelectedServicesSummary();  // Update after stylists load
+                } catch (error) {
+                    console.error('Error parsing employees:', error);
+                    e.detail.target.innerHTML = '<option value="">No available stylists</option>';
                 }
             }
         });
