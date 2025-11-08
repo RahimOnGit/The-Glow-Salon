@@ -2,79 +2,195 @@
 <html lang="en" data-theme="lofi">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Booking Confirmation - The Glow Salon</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdn.jsdelivr.net/npm/daisyui@4.12.10/dist/full.min.css" rel="stylesheet" type="text/css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+
+        .checkmark-circle {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto;
+            background: #000;
+            color: #fff;
+        }
+    </style>
 </head>
-<body class="min-h-screen bg-gradient-to-br from-green-50 to-base-200">
-<header class="shadow-lg bg-base-100">
-    <div class="navbar shadow">
+<body class="min-h-screen bg-base-100">
+<!-- Header -->
+<header class="sticky top-0 z-50 shadow-lg bg-base-100">
+    <div class="navbar max-w-7xl mx-auto">
         <div class="navbar-start">
-            <a href="/" class="btn btn-ghost text-xl">The Glow Salon</a>
+            <a href="/" class="btn btn-ghost text-xl font-bold">
+                The Glow Salon
+            </a>
         </div>
         <div class="navbar-end px-6">
-            <a href="/dashboard" class="btn btn-ghost">Dashboard</a>
+            <a href="/dashboard" class="btn btn-ghost">
+                <i class="fas fa-tachometer-alt mr-2"></i>Dashboard
+            </a>
             <form action="/logout" method="post" class="m-0 inline">
-                <button type="submit" class="btn btn-primary rounded-full">Logout</button>
+                <button type="submit" class="btn btn-primary rounded-full">
+                    <i class="fas fa-sign-out-alt mr-2"></i>Logout
+                </button>
             </form>
         </div>
     </div>
 </header>
 
+<!-- Main Content -->
 <section class="py-12 px-4" th:if="${appointment}">
-    <div class="card bg-base-100 shadow-xl max-w-4xl mx-auto">
-        <div class="card-body p-8 text-center">
-            <div class="mb-6">
-                <div class="avatar">
-                    <div class="w-24 rounded-full bg-success">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 stroke-current text-white" fill="none" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+    <div class="max-w-4xl mx-auto">
+        <!-- Success Card -->
+        <div class="card bg-base-100 shadow-2xl rounded-2xl overflow-hidden border border-base-300">
+            <div class="card-body p-8 md:p-12">
+                <!-- Success Header -->
+                <div class="text-center mb-8">
+                    <div class="flex justify-center mb-6">
+                        <div class="checkmark-circle">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 stroke-current" fill="none" viewBox="0 0 24 24" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"></path>
+                            </svg>
+                        </div>
+                    </div>
+                    <h2 class="text-4xl font-bold mb-3">Booking Confirmed!</h2>
+                    <p class="text-base-content/70 text-lg max-w-md mx-auto">Your appointment has been successfully scheduled. We're excited to help you glow!</p>
+                </div>
+
+                <!-- Appointment Details -->
+                <div class="grid md:grid-cols-2 gap-6 mb-8">
+                    <!-- Services Card -->
+                    <div class="card bg-base-200 shadow-sm rounded-xl overflow-hidden">
+                        <div class="card-body p-6">
+                            <div class="flex items-center mb-4">
+                                <div class="bg-base-300 p-2 rounded-lg mr-3">
+                                    <i class="fas fa-scissors"></i>
+                                </div>
+                                <h3 class="card-title text-xl">Selected Services</h3>
+                            </div>
+                            <div class="space-y-3">
+                                <th:block th:each="service : ${services}">
+                                    <div class="flex justify-between items-center py-2 border-b border-base-300 last:border-0">
+                                        <div>
+                                            <p class="font-medium" th:text="${service.name}">Service Name</p>
+                                        </div>
+                                        <span class="font-semibold" th:text="${service.price} + ' SEK'">Price</span>
+                                    </div>
+                                </th:block>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Appointment Info Card -->
+                    <div class="card bg-base-200 shadow-sm rounded-xl overflow-hidden">
+                        <div class="card-body p-6">
+                            <div class="flex items-center mb-4">
+                                <div class="bg-base-300 p-2 rounded-lg mr-3">
+                                    <i class="fas fa-calendar-alt"></i>
+                                </div>
+                                <h3 class="card-title text-xl">Appointment Details</h3>
+                            </div>
+                            <div class="space-y-3">
+                                <div class="flex items-center py-2">
+                                    <i class="fas fa-calendar-day w-6"></i>
+                                    <span class="ml-2"><strong>Date:</strong> <span th:text="${date}"></span></span>
+                                </div>
+                                <div class="flex items-center py-2">
+                                    <i class="fas fa-clock w-6"></i>
+                                    <span class="ml-2"><strong>Time:</strong> <span th:text="${time}"></span></span>
+                                </div>
+                                <div class="flex items-center py-2">
+                                    <i class="fas fa-user-tie w-6"></i>
+                                    <span class="ml-2"><strong>Stylist:</strong> <span th:text="${stylistName}">Stylist Name</span></span>
+                                </div>
+                                <div class="flex items-center py-2">
+                                    <i class="fas fa-map-marker-alt w-6"></i>
+                                    <span class="ml-2"><strong>Location:</strong> <span th:text="${location}"></span></span>
+                                </div>
+                                <div class="flex items-center py-2">
+                                    <i class="fas fa-hourglass-half w-6"></i>
+                                    <span class="ml-2"><strong>Total Duration:</strong> <span th:text="${totalDuration} + ' minutes'"></span></span>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
-                <h2 class="text-3xl font-bold text-success mt-4">Booking Confirmed!</h2>
-                <p class="text-base-content/70">Your appointment has been successfully scheduled.</p>
-            </div>
 
-            <!-- Display selected services -->
-            <div class="grid md:grid-cols-2 gap-4 mb-6">
-                <div class="card bg-base-200 shadow">
-                    <div class="card-body">
-                        <h3 class="card-title">Selected Services:</h3>
-                        <th:block th:each="service : ${services}">
-                            <p class="mb-2"><strong th:text="${service.name}">Service Name</strong> - <span th:text="${service.price} + ' SEK'">Price</span></p>
-                        </th:block>
+                <!-- Total Cost -->
+                <div class="bg-primary text-primary-content rounded-xl p-6 text-center shadow-lg mb-8">
+                    <div class="flex flex-col md:flex-row justify-between items-center">
+                        <div class="mb-4 md:mb-0">
+                            <p class="text-xl font-bold">Total Cost</p>
+                            <p class="text-sm opacity-90">Including all selected services</p>
+                        </div>
+                        <div class="bg-primary-focus rounded-lg px-6 py-3">
+                            <span class="text-3xl font-bold" th:text="${totalPrice} + ' SEK'"></span>
+                        </div>
                     </div>
                 </div>
-                <div class="card bg-base-200 shadow">
-                    <div class="card-body">
-                        <p><strong>Date:</strong> <span th:text="${date}"></span></p>
-                        <p><strong>Time:</strong> <span th:text="${time}"></span></p>
-                        <p><strong>Stylist:</strong> <span th:text="${stylistName}">Stylist Name</span></p>
-                        <p><strong>Location:</strong> <span th:text="${location}"></span></p>
-                        <p><strong>Total Duration:</strong> <span th:text="${totalDuration} + ' minutes'"></span></p>
-                    </div>
+
+                <!-- Action Buttons -->
+                <div class="flex flex-col sm:flex-row gap-4 justify-center">
+                    <a href="/dashboard" class="btn btn-primary rounded-full px-8 py-3">
+                        <i class="fas fa-tachometer-alt mr-2"></i>Go to Dashboard
+                    </a>
+                    <a href="/salon/services" class="btn btn-outline rounded-full px-8 py-3">
+                        <i class="fas fa-plus mr-2"></i>Book More Services
+                    </a>
                 </div>
             </div>
+        </div>
 
-            <div class="alert alert-success shadow-lg mb-6">
-                <span><strong>Total Cost:</strong> <span th:text="${totalPrice} + ' SEK'"></span></span>
+        <!-- Additional Info -->
+        <div class="mt-8 grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
+            <div class="bg-base-100 rounded-xl p-4 shadow-sm border border-base-300">
+                <i class="fas fa-clock text-primary text-xl mb-2"></i>
+                <h4 class="font-semibold">Arrive 10 Minutes Early</h4>
+                <p class="text-sm text-base-content/70 mt-1">Please arrive early</p>
             </div>
-
-            <div class="card-actions justify-center">
-                <a href="/dashboard" class="btn btn-primary rounded-full">Go to Dashboard</a>
-                <a href="/salon/services" class="btn btn-ghost">Book More</a>
+            <div class="bg-base-100 rounded-xl p-4 shadow-sm border border-base-300">
+                <i class="fas fa-credit-card text-primary text-xl mb-2"></i>
+                <h4 class="font-semibold">Payment Policy</h4>
+                <p class="text-sm text-base-content/70 mt-1">Payment will be collected at the salon after your service</p>
+            </div>
+            <div class="bg-base-100 rounded-xl p-4 shadow-sm border border-base-300">
+                <i class="fas fa-calendar-times text-primary text-xl mb-2"></i>
+                <h4 class="font-semibold">Cancellation Policy</h4>
+                <p class="text-sm text-base-content/70 mt-1">Please cancel at least 24 hours in advance to avoid fees</p>
             </div>
         </div>
     </div>
 </section>
 
-<!-- Error message if no appointment -->
+<!-- Error Section -->
 <div th:if="${error}" class="py-12 px-4">
-    <div class="alert alert-error">
-        <span th:text="${error}">Booking error</span>
+    <div class="max-w-2xl mx-auto">
+        <div class="alert alert-error shadow-lg rounded-xl">
+            <div class="flex items-center">
+                <i class="fas fa-exclamation-triangle text-xl mr-3"></i>
+                <span class="font-medium" th:text="${error}">Booking error</span>
+            </div>
+        </div>
+        <div class="text-center mt-6">
+            <a href="/salon/services" class="btn btn-primary rounded-full px-6">
+                <i class="fas fa-redo mr-2"></i>Try Again
+            </a>
+        </div>
     </div>
-    <a href="/salon/services" class="btn btn-primary">Try Again</a>
 </div>
 
-<div th:replace="~{fragments/footer :: footer}"></div>
+<!-- Footer -->
+<div th:replace ="/fragments/footer" ></div>
 </body>
 </html>
