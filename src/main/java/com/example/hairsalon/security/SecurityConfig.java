@@ -68,7 +68,7 @@ public class SecurityConfig {
 
                         // === PUBLIC PAGES ===
                         .requestMatchers("/", "/home", "/index", "/login", "/register", "/logout").permitAll()
-                        .requestMatchers("/salon/**", "/services/**", "/service-view/**", "/booking-fragment").permitAll()
+                        .requestMatchers("/salon/**", "/services/**", "/service-view/**", "/booking-fragment", "/employee/**").permitAll()
 
                         // === FRAGMENTS (GET & POST) ===
                         .requestMatchers(HttpMethod.GET, "/service-list-fragment", "/booking-form-fragment").permitAll()
@@ -87,7 +87,6 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/users/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.POST, "/api/appointments/**").hasAnyRole("USER", "ADMIN")
 
-                        // === FALLBACK ===
                         .anyRequest().authenticated()
                 )
                 .formLogin(form -> form.disable())

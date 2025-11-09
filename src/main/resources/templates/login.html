@@ -106,6 +106,10 @@
                     window.location.href = 'salon/services';
                 }
 
+                else if(payload.role==='employee'){
+                    window.location.href = 'employee/dashboard';
+                }
+
                 else {
                     console.warn('Unknown role:', payload.role);
                 }
