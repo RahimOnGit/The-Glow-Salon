@@ -89,6 +89,10 @@ public class AppointmentService {
         }
     }
 
+    public List<Appointment> getMyAppointments(Long userId) {
+        return appointmentRepository.findByUserOrderByDateAsc(userService.getUserById(userId).orElseThrow(() -> new RuntimeException("User not found")));
+    }
+
     private boolean hasTimeConflict(Employee employee, LocalDate date, LocalTime startTime, int duration) {
         List<Appointment> existing = appointmentRepository.findByEmployeeAndDate(employee, date);
         LocalTime endTime = startTime.plusMinutes(duration);

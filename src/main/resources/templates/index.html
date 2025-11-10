@@ -28,14 +28,56 @@
     </div>
 </div>
 
-<!--services section-->
-<div id="services " >
+<!-- Customer Welcome Section (Dynamic for Logged-in Customers) -->
 
-<div th:replace="fragments/service-list::serviceOverviewFragment"></div>
+<div id="customer-welcome" class="container mx-auto px-4 mt-8 mb-8 max-w-4xl" style="display: none;">
+    <div class="hero min-h-32 bg-primary text-primary-content rounded-lg shadow-lg">
+        <div class="hero-content text-center">
+            <div class="max-w-md mx-auto">
+                <h2 class="text-2xl font-bold mb-4">Welcome Back!</h2>
+                <p class="mb-4">You have <span id="upcoming-count">0</span> upcoming appointment(s). Check your bookings or schedule a new one.</p>
+                <div class="flex justify-center space-x-4">
+                    <a href="/my-appointments" class="btn btn-secondary">View Appointments</a>
+                    <a href="/salon/services" class="btn btn-secondary">Book Now</a>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 
-<!--footer-->
+<!-- Services Section -->
+<div id="services">
+    <div th:replace="fragments/service-list::serviceOverviewFragment"></div>
+</div>
+
+<!-- Footer -->
 <div th:replace="fragments/footer::footer"></div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        fetch("/api/auth/status")
+            .then(response => response.json())
+            .then(data => {
+                if (data.loggedIn && data.role === 'customer') {
+                    document.getElementById('customer-welcome').style.display = 'block';
+                    // Fetch upcoming appointments count
+                    fetch("/api/appointments/my-appointments")
+                        .then(res => res.json())
+                        .then(appointments => {
+                            const today = new Date();
+                            today.setHours(0, 0, 0, 0); // Start of today
+                            const upcoming = appointments.filter(apt => {
+                                const aptDate = new Date(apt.date);
+                                return aptDate >= today;
+                            }).length;
+                            document.getElementById('upcoming-count').textContent = upcoming;
+                        })
+                        .catch(() => {}); // Ignore errors
+                }
+            })
+            .catch(() => {});
+    });
+</script>
 
 </body>
 </html>

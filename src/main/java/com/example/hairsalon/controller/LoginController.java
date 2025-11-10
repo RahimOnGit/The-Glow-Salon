@@ -1,6 +1,7 @@
 package com.example.hairsalon.controller;
 
 import com.example.hairsalon.entity.User;
+import com.example.hairsalon.service.AppointmentService;
 import com.example.hairsalon.service.UserService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -12,15 +13,18 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
+import java.util.List;
 import java.util.Optional;
 
 @Controller
 public class LoginController {
 
     private final UserService userService;  // Inject UserService
+    private final AppointmentService appointmentService;
 
-    public LoginController(UserService userService) {
+    public LoginController(UserService userService, AppointmentService appointmentService) {
         this.userService = userService;
+        this.appointmentService = appointmentService;
     }
 
     @GetMapping("/login")
@@ -82,6 +86,26 @@ public class LoginController {
             model.addAttribute("error", "User data not found. Please log in again.");
             return "redirect:/login";
         }
+    }
+
+    @GetMapping("/my-appointments")
+    public String myAppointments(Model model, Authentication auth) {
+        if (auth == null || !auth.isAuthenticated()) {
+            return "redirect:/login";
+        }
+        String email = auth.getName();
+        Optional<User> userOpt = userService.getUserByEmail(email);
+        if (userOpt.isEmpty()) {
+            return "redirect:/login";
+        }
+        User user = userOpt.get();
+        if (!"customer".equals(user.getRole())) {
+            return "redirect:/dashboard";
+        }
+        List<com.example.hairsalon.entity.Appointment> appointments = appointmentService.getMyAppointments(user.getUserId());
+        model.addAttribute("user", user);
+        model.addAttribute("appointments", appointments);
+        return "my-appointments";
     }
 
 }

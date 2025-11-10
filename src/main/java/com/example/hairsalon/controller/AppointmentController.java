@@ -12,6 +12,7 @@ import com.example.hairsalon.service.AppointmentService;
 import com.example.hairsalon.service.EmployeeService;
 import com.example.hairsalon.service.LocationService;
 import com.example.hairsalon.service.ServiceService;
+import com.example.hairsalon.service.UserService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -43,6 +44,9 @@ public class AppointmentController {
     @Autowired
     private ServiceService serviceService;
 
+    @Autowired
+    private UserService userService;
+
     @PostMapping("/book")
     public ResponseEntity<Map<String, Object>> bookAppointment(@Valid @RequestBody BookingRequest request, Authentication auth) {
         try {
@@ -53,6 +57,15 @@ public class AppointmentController {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
     }
+
+    @GetMapping("/my-appointments")
+    public ResponseEntity<List<Appointment>> getMyAppointments(Authentication auth) {
+        String email = auth.getName();
+        var user = userService.getUserByEmail(email).orElseThrow(() -> new RuntimeException("User not found"));
+        List<Appointment> appointments = appointmentService.getMyAppointments(user.getUserId());
+        return ResponseEntity.ok(appointments);
+    }
+
     @GetMapping("/available-employees")
     public ResponseEntity<List<Employee>> getAvailableEmployees(
             @RequestParam Long locationId,

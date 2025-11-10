@@ -36,6 +36,15 @@
                         console.log("User is logged in, showing logout button");
                         if (loginLink) loginLink.classList.add("hidden");
                         if (logoutLink) logoutLink.classList.remove("hidden");
+
+                        if (data.role === 'customer') {
+                            const menu = document.querySelector('.menu-horizontal');
+                            if (menu && !menu.querySelector('a[href="/my-appointments"]')) {
+                                const li = document.createElement('li');
+                                li.innerHTML = '<a href="/my-appointments" class="font-semibold">My Appointments</a>';
+                                menu.insertBefore(li, menu.lastElementChild);
+                            }
+                        }
                     } else {
                         console.log("User is not logged in, showing login button");
                         if (loginLink) loginLink.classList.remove("hidden");

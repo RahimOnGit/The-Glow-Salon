@@ -4,18 +4,21 @@ import com.example.hairsalon.dto.RegisterRequest;
 import com.example.hairsalon.entity.User;
 import com.example.hairsalon.security.JwtUtils;
 import com.example.hairsalon.service.AuthService;
+import com.example.hairsalon.service.UserService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -26,6 +29,10 @@ public class AuthController {
 
     @Autowired
     private JwtUtils jwtUtils;
+
+    @Autowired
+    private UserService userService;
+
     @GetMapping("/status")
     public ResponseEntity<Map<String, Object>> checkAuthStatus(
             @CookieValue(value = "jwt", required = false) String token) {
@@ -33,6 +40,17 @@ public class AuthController {
         boolean loggedIn = token != null && jwtUtils.isTokenValid(token);
         Map<String, Object> response = new HashMap<>();
         response.put("loggedIn", loggedIn);
+
+        if (loggedIn) {
+            String email = jwtUtils.getEmailFromToken(token);
+            Optional<User> userOpt = userService.getUserByEmail(email);
+            if (userOpt.isPresent()) {
+                User user = userOpt.get();
+                response.put("role", user.getRole());
+                response.put("userId", user.getUserId());
+                response.put("firstName", user.getFirstName());
+            }
+        }
 
         return ResponseEntity.ok(response);
     }
@@ -65,7 +83,7 @@ public class AuthController {
             // Handle specific runtime exceptions like "Email already exists"
             if (e.getMessage().equals("Email already exists")) {
                 return ResponseEntity.status(HttpStatus.CONFLICT)
-                        .body(Map.of("error", "Email already exists   . Please use a different email."));
+                        .body(Map.of("error", "Email already exists. Please use a different email."));
             }
             // For other runtime exceptions, return 500
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
