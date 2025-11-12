@@ -3,6 +3,7 @@ package com.example.hairsalon.repository;
 import com.example.hairsalon.entity.Appointment;
 import com.example.hairsalon.entity.AppointmentStatus;
 import com.example.hairsalon.entity.Employee;
+import com.example.hairsalon.entity.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -15,6 +16,8 @@ import java.util.List;
 public interface AppointmentRepository extends JpaRepository<Appointment, Long> {
 
     List<Appointment> findByEmployeeAndDate(Employee employee, LocalDate date);
+
+    List<Appointment> findByUserOrderByDateAsc(User user);
 
     List<Appointment> findByUser_UserIdAndStatus(Long userId, AppointmentStatus status);
     @Query("SELECT COUNT(a) FROM Appointment a WHERE a.user.userId = :userId AND a.status = :status AND a.date >= :date")

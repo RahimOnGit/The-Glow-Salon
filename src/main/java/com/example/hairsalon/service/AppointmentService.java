@@ -96,6 +96,10 @@ public class AppointmentService {
         }
     }
 
+    public List<Appointment> getMyAppointments(Long userId) {
+        return appointmentRepository.findByUserOrderByDateAsc(userService.getUserById(userId).orElseThrow(() -> new RuntimeException("User not found")));
+    }
+
     @Transactional
     public void cancelAppointment(Long userId, Long appointmentId) {
         Appointment appointment = appointmentRepository.findById(appointmentId)
@@ -131,6 +135,8 @@ public class AppointmentService {
         appointment.setStatus(AppointmentStatus.COMPLETED);
         appointmentRepository.saveAndFlush(appointment);
     }
+
+
 
 
 }

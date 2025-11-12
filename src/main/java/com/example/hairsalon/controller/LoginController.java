@@ -1,26 +1,29 @@
 package com.example.hairsalon.controller;
 
 import com.example.hairsalon.entity.User;
+import com.example.hairsalon.service.AppointmentService;
 import com.example.hairsalon.service.UserService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.web.authentication.logout.SecurityContextLogoutHandler;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
-
+import java.util.List;
 import java.util.Optional;
 
 @Controller
 public class LoginController {
+    private final UserService userService; // Inject UserService
+    private final AppointmentService appointmentService;
 
-    private final UserService userService;  // Inject UserService
-
-    public LoginController(UserService userService) {
+    public LoginController(UserService userService, AppointmentService appointmentService) {
         this.userService = userService;
+        this.appointmentService = appointmentService;
     }
 
     @GetMapping("/login")
@@ -38,7 +41,6 @@ public class LoginController {
     <div hx-redirect="/salon/services"> </div>
     <script> window.location.href= '/salon/services';</script>
     """;
-
     }
 
     // Handle login errors - return just the form fragment
@@ -57,25 +59,23 @@ public class LoginController {
         }
         String email = auth.getName();
         Optional<User> userOpt = userService.getUserByEmail(email);
-
-//        if (userOpt.isPresent()) {
-//            model.addAttribute("user", userOpt.get());
-//        } else {
-//            // Log error and redirect to login
-//            model.addAttribute("error", "User data not found. Please log in again.");
-//            return "redirect:/login";
-//        }
-//        return "dashboard";
-//    }
-
+// if (userOpt.isPresent()) {
+// model.addAttribute("user", userOpt.get());
+// } else {
+// // Log error and redirect to login
+// model.addAttribute("error", "User data not found. Please log in again.");
+// return "redirect:/login";
+// }
+// return "dashboard";
+// }
         if (userOpt.isPresent()) {
             User user = userOpt.get();
             model.addAttribute("user", user);
             // Check role and return appropriate dashboard
             if ("admin".equals(user.getRole())) {
-                return "adminDashboard";  // Serves adminDashboard.html
+                return "adminDashboard"; // Serves adminDashboard.html
             } else {
-                return "salon/services";  // Serves dashboard.html for other users
+                return "salon/services"; // Serves dashboard.html for other users
             }
         } else {
             // Log error and redirect to login
@@ -84,4 +84,46 @@ public class LoginController {
         }
     }
 
+    @GetMapping("/my-appointments")
+    public String myAppointments(Model model, Authentication auth) {
+        if (auth == null || !auth.isAuthenticated()) {
+            return "redirect:/login";
+        }
+        String email = auth.getName();
+        Optional<User> userOpt = userService.getUserByEmail(email);
+        if (userOpt.isEmpty()) {
+            return "redirect:/login";
+        }
+        User user = userOpt.get();
+        if (!"customer".equals(user.getRole())) {
+            return "redirect:/dashboard";
+        }
+        List<com.example.hairsalon.entity.Appointment> appointments = appointmentService.getMyAppointments(user.getUserId());
+        model.addAttribute("user", user);
+        model.addAttribute("appointments", appointments);
+        return "my-appointments";
+    }
+
+    @PostMapping("/appointments/cancel")
+    public String cancelAppointment(@RequestParam Long appointmentId, Authentication auth, Model model) {
+        if (auth == null || !auth.isAuthenticated()) {
+            return "redirect:/login";
+        }
+        String email = auth.getName();
+        Optional<User> userOpt = userService.getUserByEmail(email);
+        if (userOpt.isEmpty()) {
+            model.addAttribute("error", "User not found. Please log in again.");
+            return "redirect:/login";
+        }
+        User user = userOpt.get();
+        if (!"customer".equals(user.getRole())) {
+            return "redirect:/dashboard";
+        }
+        try {
+            appointmentService.cancelAppointment(user.getUserId(), appointmentId);
+        } catch (RuntimeException e) {
+            model.addAttribute("error", e.getMessage());
+        }
+        return "redirect:/my-appointments";
+    }
 }
