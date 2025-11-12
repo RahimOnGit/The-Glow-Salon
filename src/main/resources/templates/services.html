@@ -56,7 +56,7 @@
             <div class="mt-4 text-center">
                 <span>you don't have an account? </span>
                 <button type="button"  id="show-register" class="underline text-primary"
-                onclick="window.location.href= '/register'">
+                        onclick="window.location.href= '/register'">
                     Register</button>
             </div>
         </form>
@@ -116,7 +116,7 @@
         checkFormComplete();
         updateSelectedServicesSummary();
     }
-//----
+    //----
     function getSelectedServiceIds() {
         const selected = sessionStorage.getItem('selectedServiceIds');
         return selected ? JSON.parse(selected) : [];
@@ -303,7 +303,7 @@
         console.log('Service selection initialized');
     }
 
-//update state of the button (contiune to booking)
+    //update state of the button (contiune to booking)
     function updateContinueButtonState() {
         const serviceCheckBoxes = document.querySelectorAll('.service-checkbox');
         const isAnyChecked = Array.from(serviceCheckBoxes).some(checkbox => checkbox.checked);
@@ -570,7 +570,7 @@
 
         console.log("Booking form initialized - Summary updated from storage");
     }
-//main set up
+    //main set up
     document.addEventListener('DOMContentLoaded', function() {
         initializeServiceSelection();
         if (document.getElementById('final-booking-form')) {

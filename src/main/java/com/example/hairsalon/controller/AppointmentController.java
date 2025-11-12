@@ -19,7 +19,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
-
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.Arrays;
@@ -31,19 +30,14 @@ import java.util.stream.Collectors;
 @RestController
 @RequestMapping("/api/appointments")
 public class AppointmentController {
-
     @Autowired
     private AppointmentService appointmentService;
-
     @Autowired
     private EmployeeService employeeService;
-
     @Autowired
     private LocationService locationService;
-
     @Autowired
     private ServiceService serviceService;
-
     @Autowired
     private UserService userService;
 
@@ -66,20 +60,26 @@ public class AppointmentController {
         return ResponseEntity.ok(appointments);
     }
 
+    @GetMapping("/pending-count")
+    public ResponseEntity<Integer> getPendingCount(Authentication auth) {
+        String email = auth.getName();
+        var user = userService.getUserByEmail(email).orElseThrow(() -> new RuntimeException("User not found"));
+        int count = appointmentService.getPendingUpcomingCount(user.getUserId());
+        return ResponseEntity.ok(count);
+    }
+
     @GetMapping("/available-employees")
     public ResponseEntity<List<Employee>> getAvailableEmployees(
             @RequestParam Long locationId,
             @RequestParam LocalDate date,
             @RequestParam LocalTime time,
-            @RequestParam String serviceIds) {  // e.g., "1,2,3"
-
+            @RequestParam String serviceIds) { // e.g., "1,2,3"
         List<Long> ids = Arrays.stream(serviceIds.split(",")).map(Long::parseLong).collect(Collectors.toList());
         int totalDuration = ids.stream()
                 .map(serviceService::getServiceById)
                 .filter(java.util.Optional::isPresent)
                 .mapToInt(s -> s.get().getDuration())
                 .sum();
-
         var location = locationService.getLocationById(locationId);
         List<Employee> available = employeeService.getAvailableEmployees(location, date, time, totalDuration);
         return ResponseEntity.ok(available);
@@ -89,5 +89,4 @@ public class AppointmentController {
     public ResponseEntity<?> getLocations() {
         return ResponseEntity.ok(locationService.getAllLocations());
     }
-
 }
