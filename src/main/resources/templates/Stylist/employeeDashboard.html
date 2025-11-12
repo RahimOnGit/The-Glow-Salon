@@ -30,9 +30,16 @@
 
         <div class="text-center lg:text-left max-w-xl ">
             <h1 class="text-5xl lg-text-6xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
-                stylist name schedule:
+
+                <span th:text="${stylist.getFirstName() + ' '+stylist.getLastName()} + '`s schedule'">  stylist name schedule: </span>
 
             </h1>
+            <div th:replace="~{fragments/stylist-appointments::list(
+            title=${title},
+            appointments=${appointments}
+        )}">
+                Loading appointments...
+            </div>
 
         </div>
     </div>

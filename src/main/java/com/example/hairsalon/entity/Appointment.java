@@ -55,7 +55,7 @@ public class Appointment {
 
     @Column(nullable = false)
     @Enumerated(EnumType.STRING)
-    private AppointmentStatus status = AppointmentStatus.PENDING;
+    private AppointmentStatus status = AppointmentStatus.CONFIRMED;
 
     public int getTotalDuration() {
         return services.stream().mapToInt(Service::getDuration).sum();

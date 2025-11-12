@@ -21,9 +21,7 @@ public class AppointmentService {
     @Autowired
     private AppointmentRepository appointmentRepository;
 
-    public Optional<Appointment> getAppointmentById(Long id) {
-        return appointmentRepository.findById(id);
-    }
+
 
     @Autowired
     private UserService userService;
@@ -38,6 +36,15 @@ public class AppointmentService {
     private LocationService locationService;
 
     private static final long MAX_BOOKINGS_PER_DAY = 8;
+
+    public List<Appointment> getAppointmentsByEmployeeAndDate(Employee employee, LocalDate date) {
+        return appointmentRepository.findByEmployeeAndDate(employee, date);
+    }
+
+    public Optional<Appointment> getAppointmentById(Long id)
+    {
+        return appointmentRepository.findById(id);
+    }
 
     @Transactional
     public Appointment bookAppointment(BookingRequest request) {
@@ -94,7 +101,7 @@ public class AppointmentService {
         LocalTime endTime = startTime.plusMinutes(duration);
 
         for (Appointment a : existing) {
-            if (!AppointmentStatus.PENDING.equals(a.getStatus())) continue;
+            if (!AppointmentStatus.CONFIRMED.equals(a.getStatus())) continue;
             LocalTime aEndTime = a.getTime().plusMinutes(a.getTotalDuration());
             if (startTime.isBefore(aEndTime) && endTime.isAfter(a.getTime())) {
                 return true;

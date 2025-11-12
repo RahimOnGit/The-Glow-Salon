@@ -83,7 +83,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/appointments/available-employees").permitAll()
 
                         // === PROTECTED ENDPOINTS ===
-                        .requestMatchers("/api/appointments/book").authenticated()
+                        .requestMatchers("/api/appointments/book").hasRole("CUSTOMER")
                         .requestMatchers(HttpMethod.GET, "/api/users/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.POST, "/api/appointments/**").hasAnyRole("USER", "ADMIN")
 

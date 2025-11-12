@@ -9,7 +9,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.util.List;
-
+// In Employee.java entity
 @Entity
 @Table(name = "Employees")
 @Data
@@ -37,4 +37,9 @@ public class Employee {
     @OneToMany(mappedBy = "employee", cascade = CascadeType.ALL)
     @JsonBackReference
     private List<Appointment> appointments;
+
+    // connect to User entity
+    @OneToOne
+    @JoinColumn(name = "user_id")
+    private User user;
 }

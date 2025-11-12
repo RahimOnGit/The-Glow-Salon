@@ -12,6 +12,7 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -22,6 +23,10 @@ public class EmployeeService {
     @Autowired
     private AppointmentRepository appointmentRepository;
 
+    public Optional<Employee> getEmployeeByUserId(Long userId) {
+        return employeeRepository.findByUserUserId(userId);
+    }
+
     public List<Employee> getAllEmployees() {
         return employeeRepository.findAll();
     }
@@ -29,6 +34,7 @@ public class EmployeeService {
     public Employee getEmployeeById(Long id) {
         return employeeRepository.findById(id).orElseThrow(() -> new RuntimeException("Employee not found"));
     }
+
 
     public List<Employee> getEmployeesByLocation(Location location) {
         return employeeRepository.findByLocation(location);

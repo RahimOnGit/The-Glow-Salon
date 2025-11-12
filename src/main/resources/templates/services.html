@@ -446,7 +446,7 @@
                 console.error('Booking failed:', res.status, result);
                 const responseEl = document.getElementById('response');
                 if (responseEl) {
-                    responseEl.innerHTML = `<div class="alert alert-error">Booking failed: ${result || 'Unknown error (Status: ' + res.status + ')'}</div>`;
+                    responseEl.innerHTML = `<div class="alert alert-error">Booking failed: ${result || 'you are not authorized / Unknown error (Status: ' + res.status + ')'}</div>`;
                 } else {
                     alert(`Booking failed: ${result || 'Unknown error (Status: ' + res.status + ')'}`);
                 }

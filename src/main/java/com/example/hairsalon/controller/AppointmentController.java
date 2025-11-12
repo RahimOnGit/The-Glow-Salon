@@ -58,7 +58,7 @@ public class AppointmentController {
             @RequestParam Long locationId,
             @RequestParam LocalDate date,
             @RequestParam LocalTime time,
-            @RequestParam String serviceIds) {  // e.g., "1,2,3"
+            @RequestParam String serviceIds) {
 
         List<Long> ids = Arrays.stream(serviceIds.split(",")).map(Long::parseLong).collect(Collectors.toList());
         int totalDuration = ids.stream()
