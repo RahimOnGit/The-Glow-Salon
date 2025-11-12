@@ -1,29 +1,23 @@
 package com.example.hairsalon.service;
 
+import com.example.hairsalon.dto.AppointmentAdminDTO;
 import com.example.hairsalon.dto.BookingRequest;
-import com.example.hairsalon.entity.Appointment;
-import com.example.hairsalon.entity.AppointmentStatus;
-import com.example.hairsalon.entity.Employee;
-import com.example.hairsalon.entity.Location;
-import com.example.hairsalon.entity.Service;
-import com.example.hairsalon.entity.User;
+import com.example.hairsalon.entity.*;
 import com.example.hairsalon.repository.AppointmentRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
 import java.time.LocalDate;
 import java.time.LocalTime;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
-@org.springframework.stereotype.Service
+@Service
 public class AppointmentService {
+
     @Autowired
     private AppointmentRepository appointmentRepository;
-
-    public Optional<Appointment> getAppointmentById(Long id) {
-        return appointmentRepository.findById(id);
-    }
 
     @Autowired
     private UserService userService;
@@ -39,14 +33,47 @@ public class AppointmentService {
 
     private static final long MAX_BOOKINGS_PER_DAY = 8;
 
+    public List<AppointmentAdminDTO> getAppointmentsForAdmin(
+            String customer,
+            String stylist,
+            AppointmentStatus status,
+            LocalDate from,
+            LocalDate to
+    ) {
+        List<Appointment> appointments = appointmentRepository.findFilteredAppointments(customer, stylist, status, from, to);
+
+        return appointments.stream()
+                .map(a -> new AppointmentAdminDTO(
+                        a.getAppointmentId(),
+                        a.getUser() != null ? a.getUser().getFirstName() + " " + a.getUser().getLastName() : "-",
+                        a.getEmployee() != null ? a.getEmployee().getFirstName() + " " + a.getEmployee().getLastName() : "-",
+                        a.getServices() != null
+                                ? a.getServices().stream().map(Service::getName).collect(Collectors.joining(", "))
+                                : "-",
+                        a.getLocation() != null ? a.getLocation().getName() : "-",
+                        a.getDate(),
+                        a.getTime(),
+                        a.getStatus() != null ? a.getStatus().name() : "-"
+                ))
+                .collect(Collectors.toList());
+    }
+
+
+    public Optional<Appointment> getAppointmentById(Long id) {
+        return appointmentRepository.findById(id);
+    }
+
     @Transactional
     public Appointment bookAppointment(BookingRequest request) {
         try {
-            // Get current user from security context
-            String email = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication().getName();
-            User user = userService.getUserByEmail(email).orElseThrow(() -> new RuntimeException("User not found"));
+            String email = org.springframework.security.core.context.SecurityContextHolder
+                    .getContext()
+                    .getAuthentication()
+                    .getName();
 
-            // Fetch multiple services
+            User user = userService.getUserByEmail(email)
+                    .orElseThrow(() -> new RuntimeException("User not found"));
+
             List<Service> services = request.getServiceIds().stream()
                     .map(serviceId -> serviceService.getServiceById(serviceId)
                             .orElseThrow(() -> new RuntimeException("Service not found: " + serviceId)))
@@ -59,15 +86,12 @@ public class AppointmentService {
             Employee employee = employeeService.getEmployeeById(request.getEmployeeId());
             Location location = locationService.getLocationById(request.getLocationId());
 
-            // Calculate total duration for conflict check
             int totalDuration = services.stream().mapToInt(Service::getDuration).sum();
 
-            // Conflict check with total duration
             if (hasTimeConflict(employee, request.getDate(), request.getTime(), totalDuration)) {
                 throw new RuntimeException("Time slot conflict with existing appointment");
             }
 
-            // Create appointment
             Appointment appointment = new Appointment();
             appointment.setUser(user);
             appointment.setEmployee(employee);
@@ -80,7 +104,6 @@ public class AppointmentService {
             Appointment saved = appointmentRepository.save(appointment);
             appointmentRepository.flush();
 
-            // Increment visit count
             userService.incrementVisitCount(user.getUserId());
 
             return saved;
