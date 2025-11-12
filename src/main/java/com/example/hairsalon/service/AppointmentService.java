@@ -5,7 +5,6 @@ import com.example.hairsalon.dto.BookingRequest;
 import com.example.hairsalon.entity.*;
 import com.example.hairsalon.repository.AppointmentRepository;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
@@ -13,7 +12,8 @@ import java.time.LocalTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
-@Service
+// ✅ Viktigt: använd fullt kvalificerat namn för Spring-annotationen
+@org.springframework.stereotype.Service
 public class AppointmentService {
 
     @Autowired
@@ -48,7 +48,10 @@ public class AppointmentService {
                         a.getUser() != null ? a.getUser().getFirstName() + " " + a.getUser().getLastName() : "-",
                         a.getEmployee() != null ? a.getEmployee().getFirstName() + " " + a.getEmployee().getLastName() : "-",
                         a.getServices() != null
-                                ? a.getServices().stream().map(Service::getName).collect(Collectors.joining(", "))
+                                ? a.getServices().stream()
+                                // 👇 Pekar uttryckligen på din entityklass
+                                .map(com.example.hairsalon.entity.Service::getName)
+                                .collect(Collectors.joining(", "))
                                 : "-",
                         a.getLocation() != null ? a.getLocation().getName() : "-",
                         a.getDate(),
@@ -57,7 +60,6 @@ public class AppointmentService {
                 ))
                 .collect(Collectors.toList());
     }
-
 
     public Optional<Appointment> getAppointmentById(Long id) {
         return appointmentRepository.findById(id);
@@ -74,7 +76,8 @@ public class AppointmentService {
             User user = userService.getUserByEmail(email)
                     .orElseThrow(() -> new RuntimeException("User not found"));
 
-            List<Service> services = request.getServiceIds().stream()
+            // 👇 Här också tydliggör vi vilken Service du menar
+            List<com.example.hairsalon.entity.Service> services = request.getServiceIds().stream()
                     .map(serviceId -> serviceService.getServiceById(serviceId)
                             .orElseThrow(() -> new RuntimeException("Service not found: " + serviceId)))
                     .collect(Collectors.toList());
@@ -86,7 +89,9 @@ public class AppointmentService {
             Employee employee = employeeService.getEmployeeById(request.getEmployeeId());
             Location location = locationService.getLocationById(request.getLocationId());
 
-            int totalDuration = services.stream().mapToInt(Service::getDuration).sum();
+            int totalDuration = services.stream()
+                    .mapToInt(com.example.hairsalon.entity.Service::getDuration)
+                    .sum();
 
             if (hasTimeConflict(employee, request.getDate(), request.getTime(), totalDuration)) {
                 throw new RuntimeException("Time slot conflict with existing appointment");

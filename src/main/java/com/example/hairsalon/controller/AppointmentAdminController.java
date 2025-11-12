@@ -1,3 +1,5 @@
+package com.example.hairsalon.controller;
+
 import com.example.hairsalon.dto.AppointmentAdminDTO;
 import com.example.hairsalon.entity.AppointmentStatus;
 import com.example.hairsalon.service.AppointmentService;
