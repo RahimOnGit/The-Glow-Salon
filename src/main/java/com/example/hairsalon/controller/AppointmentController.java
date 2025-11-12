@@ -54,6 +54,24 @@ public class AppointmentController {
         }
     }
 
+
+    @GetMapping("/my-appointments")
+    public ResponseEntity<List<Appointment>> getMyAppointments(Authentication auth) {
+        String email = auth.getName();
+        var user = userService.getUserByEmail(email).orElseThrow(() -> new RuntimeException("User not found"));
+        List<Appointment> appointments = appointmentService.getMyAppointments(user.getUserId());
+        return ResponseEntity.ok(appointments);
+    }
+
+    @GetMapping("/pending-count")
+    public ResponseEntity<Integer> getPendingCount(Authentication auth) {
+        String email = auth.getName();
+        var user = userService.getUserByEmail(email).orElseThrow(() -> new RuntimeException("User not found"));
+        int count = appointmentService.getPendingUpcomingCount(user.getUserId());
+        return ResponseEntity.ok(count);
+    }
+
+
     @PostMapping("/{appointmentId}/complete")
     public ResponseEntity<Map<String, String>> completeAppointment(@PathVariable Long appointmentId) {
         try {

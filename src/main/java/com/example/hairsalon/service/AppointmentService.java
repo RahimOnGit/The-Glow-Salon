@@ -136,7 +136,9 @@ public class AppointmentService {
         appointmentRepository.saveAndFlush(appointment);
     }
 
-
-
+    public int getPendingUpcomingCount(Long userId) {
+        LocalDate today = LocalDate.now();
+        return (int) appointmentRepository.countByUserUserIdAndStatusAndDateGreaterThanEqual(userId, AppointmentStatus.PENDING, today);
+    }
 
 }

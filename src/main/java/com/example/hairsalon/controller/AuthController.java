@@ -4,6 +4,7 @@ import com.example.hairsalon.dto.RegisterRequest;
 import com.example.hairsalon.entity.User;
 import com.example.hairsalon.security.JwtUtils;
 import com.example.hairsalon.service.AuthService;
+import com.example.hairsalon.service.UserService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
@@ -16,6 +17,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -23,16 +25,30 @@ public class AuthController {
 
     @Autowired
     private AuthService authService;
+    @Autowired
+    private UserService userService;
 
     @Autowired
     private JwtUtils jwtUtils;
-    @GetMapping("/status")
-    public ResponseEntity<Map<String, Object>> checkAuthStatus(
-            @CookieValue(value = "jwt", required = false) String token) {
+
+            @GetMapping("/status")
+            public ResponseEntity<Map<String, Object>> checkAuthStatus(
+                    @CookieValue(value = "jwt", required = false) String token) {
 
         boolean loggedIn = token != null && jwtUtils.isTokenValid(token);
         Map<String, Object> response = new HashMap<>();
         response.put("loggedIn", loggedIn);
+
+        if (loggedIn) {
+            String email = jwtUtils.getEmailFromToken(token);
+            Optional<User> userOpt = userService.getUserByEmail(email);
+            if (userOpt.isPresent()) {
+                User user = userOpt.get();
+                response.put("role", user.getRole());
+                response.put("userId", user.getUserId());
+                response.put("firstName", user.getFirstName());
+            }
+        }
 
         return ResponseEntity.ok(response);
     }
