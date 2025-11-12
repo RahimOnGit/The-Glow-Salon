@@ -96,6 +96,20 @@ public class AppointmentService {
         }
     }
 
+    @Transactional
+    public void cancelAppointment(Long userId, Long appointmentId) {
+        Appointment appointment = appointmentRepository.findById(appointmentId)
+                .orElseThrow(() -> new RuntimeException("Appointment not found"));
+        if (!appointment.getUser().getUserId().equals(userId)) {
+            throw new RuntimeException("Not authorized to cancel this appointment");
+        }
+        if (appointment.getStatus() == AppointmentStatus.COMPLETED || appointment.getStatus() == AppointmentStatus.CANCELLED) {
+            throw new RuntimeException("Cannot cancel this appointment");
+        }
+        appointment.setStatus(AppointmentStatus.CANCELLED);
+        appointmentRepository.saveAndFlush(appointment);
+    }
+
     private boolean hasTimeConflict(Employee employee, LocalDate date, LocalTime startTime, int duration) {
         List<Appointment> existing = appointmentRepository.findByEmployeeAndDate(employee, date);
         LocalTime endTime = startTime.plusMinutes(duration);
@@ -109,4 +123,14 @@ public class AppointmentService {
         }
         return false;
     }
+
+    @Transactional
+    public void completeAppointment(Long appointmentId) {
+        Appointment appointment = appointmentRepository.findById(appointmentId).orElseThrow(() -> new RuntimeException("Appointment not found"));
+
+        appointment.setStatus(AppointmentStatus.COMPLETED);
+        appointmentRepository.saveAndFlush(appointment);
+    }
+
+
 }

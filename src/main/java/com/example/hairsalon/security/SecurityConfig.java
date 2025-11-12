@@ -82,10 +82,17 @@ public class SecurityConfig {
                         .requestMatchers("/api/appointments/locations").permitAll()
                         .requestMatchers("/api/appointments/available-employees").permitAll()
 
+
                         // === PROTECTED ENDPOINTS ===
                         .requestMatchers("/api/appointments/book").hasRole("CUSTOMER")
                         .requestMatchers(HttpMethod.GET, "/api/users/**").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.POST, "/api/appointments/**").hasAnyRole("USER", "ADMIN")
+                        .requestMatchers(HttpMethod.POST, "/api/appointments/**").hasAnyRole("USER", "ADMIN" , "EMPLOYEE")
+
+                        //STYLIST APPOINTMENTS CONTROL
+//                        .requestMatchers("/api/appointments/*/complete").hasAnyRole("EMPLOYEE" , "ADMIN")
+//                        .requestMatchers("/api/appointments/*/complete").hasAnyRole("employee" , "admin")
+
+
 
                         .anyRequest().authenticated()
                 )

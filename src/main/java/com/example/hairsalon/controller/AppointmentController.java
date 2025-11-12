@@ -2,16 +2,13 @@ package com.example.hairsalon.controller;
 
 import com.example.hairsalon.dto.BookingRequest;
 import com.example.hairsalon.entity.Employee;
+import com.example.hairsalon.service.*;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.example.hairsalon.entity.Appointment;
 import com.example.hairsalon.entity.Location;
 import com.example.hairsalon.entity.Service;
-import com.example.hairsalon.service.AppointmentService;
-import com.example.hairsalon.service.EmployeeService;
-import com.example.hairsalon.service.LocationService;
-import com.example.hairsalon.service.ServiceService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -41,6 +38,9 @@ public class AppointmentController {
     private LocationService locationService;
 
     @Autowired
+    private UserService userService;
+
+    @Autowired
     private ServiceService serviceService;
 
     @PostMapping("/book")
@@ -53,6 +53,20 @@ public class AppointmentController {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
     }
+
+    @PostMapping("/{appointmentId}/complete")
+    public ResponseEntity<Map<String, String>> completeAppointment(@PathVariable Long appointmentId) {
+        try {
+            appointmentService.completeAppointment(appointmentId);
+            return ResponseEntity.ok(Map.of("message", "Appointment completed successfully"));
+        }
+        catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+
+    }
+
+
     @GetMapping("/available-employees")
     public ResponseEntity<List<Employee>> getAvailableEmployees(
             @RequestParam Long locationId,
@@ -76,5 +90,8 @@ public class AppointmentController {
     public ResponseEntity<?> getLocations() {
         return ResponseEntity.ok(locationService.getAllLocations());
     }
+
+
+
 
 }

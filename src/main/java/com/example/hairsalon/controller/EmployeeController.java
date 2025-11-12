@@ -1,5 +1,6 @@
 package com.example.hairsalon.controller;
 
+import com.example.hairsalon.entity.Appointment;
 import com.example.hairsalon.entity.Employee;
 import com.example.hairsalon.entity.User;
 import com.example.hairsalon.service.AppointmentService;
@@ -13,6 +14,7 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 
 import java.time.LocalDate;
+import java.util.Comparator;
 import java.util.stream.Collectors;
 
 @Controller
@@ -33,17 +35,17 @@ public class EmployeeController {
             // Get and check the auth
             Authentication auth = SecurityContextHolder.getContext().getAuthentication();
             if(auth == null || !auth.isAuthenticated() || auth.getPrincipal().equals("anonymousUser")) {
-                return "redirect:/login";
+                return "login";
             }
 
-            // Get the auth email and get the user by the email
+            // Get the auth email and get the user by the email(logged-iin employee)
             String email = auth.getName();
             User user = userService.getUserByEmail(email)
                     .orElseThrow(() -> new RuntimeException("User not found: " + email));
 
             System.out.println("Found user: " + user.getEmail() + " with ID: " + user.getUserId());
 
-            // Find the employee associated with this user
+            // Find the employee for this user
             Employee employee = employeeService.getEmployeeByUserId(user.getUserId())
                     .orElseThrow(() -> new RuntimeException("Employee not found for user ID: " + user.getUserId() + " (" + user.getEmail() + ")"));
 
@@ -53,6 +55,7 @@ public class EmployeeController {
             LocalDate today = LocalDate.now();
             var todayAppointments = appointmentService.getAppointmentsByEmployeeAndDate(employee, today)
                     .stream()
+                    .sorted(Comparator.comparing(Appointment::getTime))
                     .map(appt -> new com.example.hairsalon.dto.AppointmentDto(
                             appt.getAppointmentId(),
                             appt.getUser().getFirstName() + " " + appt.getUser().getLastName(),

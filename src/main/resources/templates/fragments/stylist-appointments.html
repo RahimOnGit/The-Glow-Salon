@@ -3,8 +3,7 @@
         <h2 th:text="${title}" class="text-xl font-bold">Today</h2>
 
         <!-- Empty State -->
-        <div th:if="${#lists.isEmpty(appointments)}"
-             class="shadow-lg text-center py-8">
+        <div th:if="${#lists.isEmpty(appointments)}" class="shadow-lg text-center py-8">
             <svg class="w-12 h-12 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                       d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
@@ -27,6 +26,31 @@
                     </p>
                     <p class="text-sm" th:text="${#strings.listJoin(appt.serviceNames(), ', ')}">Cut</p>
                 </div>
+            </div>
+
+            <!-- Status and Complete Button -->
+            <div class="flex justify-between items-center mt-4 pt-4 border-t border-gray-200">
+                <!-- Status  -->
+                <span th:classappend="${appt.status().name() == 'COMPLETED'} ?
+                                      'badge badge-success' :
+                                      'badge badge-warning'"
+                      th:text="${appt.status()}">
+                    Pending
+                </span>
+
+                <!-- Complete Button -->
+                <button th:if="${appt.status().name() != 'COMPLETED'}"
+                        class="btn btn-success btn-sm"
+                        th:data-appointment-id="${appt.id()}"
+                        onclick="completeAppointment(this)">
+                    Complete
+                </button>
+
+                <!-- Show message if already completed -->
+                <span th:if="${appt.status().name() == 'COMPLETED'}"
+                      class="text-success font-semibold">
+                    ✓ Completed
+                </span>
             </div>
         </div>
     </div>
