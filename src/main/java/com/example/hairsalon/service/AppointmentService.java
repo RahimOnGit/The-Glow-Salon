@@ -78,7 +78,8 @@ public class AppointmentService {
     }
 
     public List<Appointment> getMyAppointments(Long userId) {
-        return appointmentRepository.findByUserOrderByDateAsc(userService.getUserById(userId).orElseThrow(() -> new RuntimeException("User not found")));
+        User user = userService.getUserById(userId).orElseThrow(() -> new RuntimeException("User not found"));
+        return appointmentRepository.findByUserSortedByDateAndTime(user);
     }
 
     @Transactional
