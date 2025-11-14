@@ -102,7 +102,7 @@ public class JwtUtils {
         }
         catch (JwtException | IllegalArgumentException e) {
             logger.error(" invalid JWT token : {} ",e.getMessage());
-        return false;
+            return false;
         }
 
     }
