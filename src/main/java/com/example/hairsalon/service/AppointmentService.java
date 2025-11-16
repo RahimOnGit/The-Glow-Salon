@@ -45,6 +45,10 @@ public class AppointmentService {
     {
         return appointmentRepository.findById(id);
     }
+    public List<Appointment> getMyAppointments(Long userId) {
+        User user = userService.getUserById(userId).orElseThrow(() -> new RuntimeException("User not found"));
+        return appointmentRepository.findByUserSortedByDateAndTime(user);
+    }
 
     @Transactional
     public Appointment bookAppointment(BookingRequest request) {
@@ -96,9 +100,6 @@ public class AppointmentService {
         }
     }
 
-    public List<Appointment> getMyAppointments(Long userId) {
-        return appointmentRepository.findByUserOrderByDateAsc(userService.getUserById(userId).orElseThrow(() -> new RuntimeException("User not found")));
-    }
 
     @Transactional
     public void cancelAppointment(Long userId, Long appointmentId) {

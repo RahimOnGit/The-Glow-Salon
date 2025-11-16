@@ -56,7 +56,7 @@
             <div class="mt-4 text-center">
                 <span>you don't have an account? </span>
                 <button type="button"  id="show-register" class="underline text-primary"
-                onclick="window.location.href= '/register'">
+                        onclick="window.location.href= '/register'">
                     Register</button>
             </div>
         </form>
@@ -68,7 +68,10 @@
 
 
 <!--Footer-->
-<div th:replace="~{fragments/footer :: footer}"></div><script>
+<div th:replace="~{fragments/footer :: footer}"></div>
+
+
+<script>
     // Define all functions first to avoid reference errors
 
     function setMinDate() {
@@ -87,6 +90,18 @@
         const timeGrid = document.getElementById('time-grid');
         if (!timeGrid) return;
 
+        const dateInput = document.getElementById('date-input');
+        const selectedDate = dateInput ? dateInput.value : '';
+        const todayStr = new Date().toISOString().split('T')[0]; // e.g., '2025-11-14'
+        const isToday = selectedDate === todayStr;
+
+        let currentHour, currentMinute;
+        if (isToday) {
+            const now = new Date();
+            currentHour = now.getHours();
+            currentMinute = now.getMinutes();
+        }
+
         const times = [];
         for (let hour = 9; hour <= 17; hour++) {
             times.push(`${hour.toString().padStart(2, '0')}:00`);
@@ -95,19 +110,56 @@
             }
         }
 
-        timeGrid.innerHTML = times.map(time => `
-            <button type="button" class="btn btn-outline btn-sm rounded-full transition-all duration-200 hover:bg-primary hover:text-white"
-                    onclick="selectTime('${time}')">${time}</button>
-        `).join('');
+        timeGrid.innerHTML = times.map(time => {
+            let buttonClass = 'btn btn-outline btn-sm rounded-full transition-all duration-200 hover:bg-primary hover:text-white';
+            let disabledAttr = '';
+            let onclickAttr = `onclick="selectTime('${time}')"`; // Default enabled
+
+            if (isToday) {
+                const [timeHour, timeMinute] = time.split(':').map(Number);
+                const isPastTime = timeHour < currentHour ||
+                    (timeHour === currentHour && timeMinute <= currentMinute); // Disable if <= current time
+
+                if (isPastTime) {
+                    buttonClass += ' btn-disabled opacity-50 cursor-not-allowed';
+                    disabledAttr = 'disabled';
+                    onclickAttr = ''; // Remove onclick for disabled
+                }
+            }
+
+            return `
+                <button type="button"
+                        class="${buttonClass}"
+                        ${disabledAttr}
+                        ${onclickAttr}>
+                    ${time} ${isToday && disabledAttr ? '' : ''}
+                </button>
+            `;
+        }).join('');
+
+        // Clear selected time if it's now disabled (e.g., user changes date back to today)
+        const selectedTime = document.getElementById('selected-time').value;
+        if (isToday && selectedTime && !document.querySelector(`#time-grid button[onclick="selectTime('${selectedTime}')"]`)) {
+            document.getElementById('selected-time').value = '';
+            document.getElementById('selected-time-display').textContent = 'Select a time';
+        }
     }
 
     function selectTime(time) {
+        // Check if the button is disabled
+        const button = event ? event.target : document.querySelector(`#time-grid button[onclick="selectTime('${time}')"]`);
+        if (button && (button.disabled || button.classList.contains('btn-disabled'))) {
+            alert('This time slot has already passed. Please select a future time.');
+            return;
+        }
+
         document.getElementById('selected-time').value = time;
         document.getElementById('selected-time-display').textContent = `Selected: ${time}`;
 
+        // Highlight selected button
         document.querySelectorAll('#time-grid button').forEach(btn => {
             btn.classList.remove('btn-primary');
-            if(btn.textContent === time) {
+            if (btn.textContent.trim().startsWith(time)) {
                 btn.classList.add('btn-primary');
             }
         });
@@ -115,149 +167,6 @@
         triggerAvailableEmployees();
         checkFormComplete();
         updateSelectedServicesSummary();
-    }
-//----
-    function getSelectedServiceIds() {
-        const selected = sessionStorage.getItem('selectedServiceIds');
-        return selected ? JSON.parse(selected) : [];
-    }
-
-    // Helper function to get selected service details (unchanged, but added logging for debugging/learning)
-    function getSelectedServiceDetails() {
-        const storedDetails = sessionStorage.getItem('selectedServicesDetails');
-        if (storedDetails) {
-            console.log('Using stored service details from sessionStorage');
-            return JSON.parse(storedDetails);
-        }
-        // Fallback to DOM query (for initial selection page)
-        const serviceIds = getSelectedServiceIds();
-        const serviceCheckboxes = document.querySelectorAll('.service-checkbox');
-        if (serviceCheckboxes.length === 0 && serviceIds.length > 0) {
-            console.warn('DOM checkboxes not found, but IDs exist - relying on stored details');
-            return []; // Will be caught by storedDetails above
-        }
-        const details = Array.from(serviceCheckboxes)
-            .filter(checkbox => serviceIds.includes(checkbox.value))
-            .map(checkbox => {
-                const label = checkbox.closest('label');
-                const nameElement = label.querySelector('span.font-semibold');
-                const durationElement = label.querySelector('span.text-sm');
-                const priceElement = label.querySelector('span.text-xl');
-                return {
-                    id: checkbox.value,
-                    name: nameElement ? nameElement.textContent : 'Service',
-                    duration: parseInt(checkbox.getAttribute('data-duration') || '0'),
-                    price: parseFloat(priceElement ? priceElement.textContent.replace(' SEK', '') : 0)
-                };
-            });
-        // If details found, store them for later use (best practice: cache to avoid repeated DOM queries)
-        if (details.length > 0) {
-            sessionStorage.setItem('selectedServicesDetails', JSON.stringify(details));
-        }
-        return details;
-    }
-
-    // Improved updateSelectedServicesSummary function
-    function updateSelectedServicesSummary() {
-        const serviceIds = getSelectedServiceIds();
-        const summaryElement = document.getElementById('selected-services-summary');
-        const selectedTime = document.getElementById('selected-time')?.value || 'Not selected';
-        const selectedStylist = document.getElementById('stylist-select')?.options[document.getElementById('stylist-select')?.selectedIndex]?.text || 'Not selected';
-
-        if (!summaryElement) {
-            console.warn('Summary element not found');
-            return;
-        }
-
-        console.log('Updating summary - Service IDs:', serviceIds, 'Time:', selectedTime, 'Stylist:', selectedStylist);
-
-        if (serviceIds.length === 0) {
-            // Improved fallback: Use DaisyUI alert for better UX instead of plain text
-            summaryElement.innerHTML = `
-            <div class="alert alert-warning shadow-lg">
-                <svg xmlns="http://www.w3.org/2000/svg" class="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
-                <span>No services selected yet. Please choose from the list above.</span>
-            </div>
-        `;
-            return;
-        }
-
-        const selectedServices = getSelectedServiceDetails();
-        console.log('Fetched service details:', selectedServices);
-
-        if (selectedServices.length === 0) {
-            summaryElement.innerHTML = `
-            <div class="alert alert-info shadow-lg">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="stroke-info shrink-0 w-6 h-6"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                <span>Services selected but details not loaded. Please select again.</span>
-            </div>
-        `;
-            return;
-        }
-
-        // Calculate totals using reduce (modern, efficient way)
-        const totalDuration = selectedServices.reduce((sum, s) => sum + s.duration, 0);
-        const totalPrice = selectedServices.reduce((sum, s) => sum + s.price, 0);
-
-        // Build HTML with DaisyUI card, divided list, icons, and badges
-        let summaryHTML = `
-        <div class="card bg-base-100 shadow-md">
-            <div class="card-body p-4">
-                <h2 class="card-title text-lg font-bold mb-2 flex items-center">
-                    <svg class="w-5 h-5 mr-2 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path>
-                    </svg>
-                    Booking Summary
-                </h2>
-                <ul class="divide-y divide-gray-200">
-    `;
-
-        selectedServices.forEach(service => {
-            summaryHTML += `
-            <li class="py-2 flex justify-between items-center">
-                <div class="flex items-center">
-                    <svg class="w-4 h-4 mr-2 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                    </svg>
-                    <span class="font-medium">${service.name}</span>
-                </div>
-                <div class="text-right">
-                    <div class="text-sm text-gray-600">${service.duration} min</div>
-                    <span class="badge badge-primary font-bold">${service.price} SEK</span>
-                </div>
-            </li>
-        `;
-        });
-
-        summaryHTML += `
-                </ul>
-                <div class="mt-4 pt-2 border-t border-gray-300 font-bold flex justify-between">
-                    <span>Total:</span>
-                    <div class="text-right">
-                        <div class="text-sm">${totalDuration} min</div>
-                        <span class="badge badge-lg badge-secondary">${totalPrice} SEK</span>
-                    </div>
-                </div>
-                <div class="mt-4 grid grid-cols-2 gap-2 text-sm">
-                    <div class="p-2  rounded flex items-center">
-                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                        </svg>
-                        Time: ${selectedTime}
-                    </div>
-                    <div class="p-2  rounded flex items-center">
-                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
-                        </svg>
-                        Stylist: ${selectedStylist}
-                    </div>
-                </div>
-            </div>
-        </div>
-    `;
-
-        summaryElement.innerHTML = summaryHTML;
-        console.log('Summary updated successfully');
     }
 
 
@@ -286,10 +195,7 @@
         }
     }
 
-
-
-
-    // Service selection functions
+    // Service selection functions (unchanged)
     function initializeServiceSelection() {
         const serviceForm = document.getElementById('service-selection-form');
         if (!serviceForm) return;
@@ -303,7 +209,7 @@
         console.log('Service selection initialized');
     }
 
-//update state of the button (contiune to booking)
+    //update state of the button (contiune to booking)
     function updateContinueButtonState() {
         const serviceCheckBoxes = document.querySelectorAll('.service-checkbox');
         const isAnyChecked = Array.from(serviceCheckBoxes).some(checkbox => checkbox.checked);
@@ -339,10 +245,6 @@
             sessionStorage.removeItem('selectedServicesDetails');
         }
     }
-
-
-
-
 
     //check if the user is logged in
     async function isLoggedIn() {
@@ -446,7 +348,7 @@
                 console.error('Booking failed:', res.status, result);
                 const responseEl = document.getElementById('response');
                 if (responseEl) {
-                    responseEl.innerHTML = `<div class="alert alert-error">Booking failed: ${result || 'you are not authorized / Unknown error (Status: ' + res.status + ')'}</div>`;
+                    responseEl.innerHTML = `<div class="alert alert-error">Booking failed: ${result || 'Unknown error (Status: ' + res.status + ')'}</div>`;
                 } else {
                     alert(`Booking failed: ${result || 'Unknown error (Status: ' + res.status + ')'}`);
                 }
@@ -497,17 +399,7 @@
 
     // Cancel button
     document.getElementById('cancel-login').addEventListener('click', hideLoginModal);
-    // function setupFormSubmissionHandlerNew() {
-    //     const form = document.getElementById('final-booking-form');
-    //     if (!form) return;
-    //
-    //     form.addEventListener('submit', async (e) => {
-    //         e.preventDefault();
-    //         await submitBooking();
-    //     });
-    //
-    //     // Update summary on changes
-    //      }
+
     function setupFormSubmissionHandlerNew() {
         const form = document.getElementById('final-booking-form');
         if (!form) return;
@@ -524,8 +416,8 @@
         });
         document.getElementById('selected-time')?.addEventListener('change', updateSelectedServicesSummary);
         document.getElementById('stylist-select')?.addEventListener('change', updateSelectedServicesSummary);
-
     }
+
     // Handle HTMX responses for employee dropdown
     document.body.addEventListener('htmx:afterRequest', function(e) {
         if (e.detail.target && e.detail.target.id === 'stylist-select') {
@@ -534,7 +426,7 @@
                 let options = '<option value="">Select a stylist</option>';
                 if (Array.isArray(employees)) {
                     employees.forEach(emp => {
-                        options += `<option value="${emp.employeeId}">${emp.name}</option>`;
+                        options += `<option value="${emp.employeeId}">${emp.firstName} ${emp.lastName}</option>`;
                     });
                 }
                 e.detail.target.innerHTML = options;
@@ -545,34 +437,178 @@
                 checkFormComplete();
             }
         }
-
-
-
     });
-
-
-
-
 
     function initializeBookingForm() {
         console.log("Initializing booking form...");
         setMinDate();
-        generateTimeGrid();
+        generateTimeGrid(); // Initial generation with disabling
         updateSelectedServicesSummary();  // FIXED: Call this immediately to load from sessionStorage
         setupFormSubmissionHandlerNew();
 
-        // Event listeners (unchanged)
+        // Event listeners (updated: regenerate time grid on date change)
         const locationSelect = document.getElementById('location-select');
         const dateInput = document.getElementById('date-input');
         const stylistSelect = document.getElementById('stylist-select');
 
         if (locationSelect) locationSelect.addEventListener('change', () => { triggerAvailableEmployees(); checkFormComplete(); updateSelectedServicesSummary(); });
-        if (dateInput) dateInput.addEventListener('change', () => { triggerAvailableEmployees(); checkFormComplete(); updateSelectedServicesSummary(); });
+        if (dateInput) {
+            dateInput.addEventListener('change', () => {
+                generateTimeGrid(); // Regenerate times with new date (enables/disables past times)
+                triggerAvailableEmployees();
+                checkFormComplete();
+                updateSelectedServicesSummary();
+            });
+        }
         if (stylistSelect) stylistSelect.addEventListener('change', () => { checkFormComplete(); updateSelectedServicesSummary(); });
 
         console.log("Booking form initialized - Summary updated from storage");
     }
-//main set up
+
+    // ... (Include all other unchanged functions: getSelectedServiceIds, getSelectedServiceDetails, updateSelectedServicesSummary here if not already defined above)
+
+    function getSelectedServiceIds() {
+        const selected = sessionStorage.getItem('selectedServiceIds');
+        return selected ? JSON.parse(selected) : [];
+    }
+
+    function getSelectedServiceDetails() {
+        const storedDetails = sessionStorage.getItem('selectedServicesDetails');
+        if (storedDetails) {
+            console.log('Using stored service details from sessionStorage');
+            return JSON.parse(storedDetails);
+        }
+        // Fallback to DOM query (for initial selection page)
+        const serviceIds = getSelectedServiceIds();
+        const serviceCheckboxes = document.querySelectorAll('.service-checkbox');
+        if (serviceCheckboxes.length === 0 && serviceIds.length > 0) {
+            console.warn('DOM checkboxes not found, but IDs exist - relying on stored details');
+            return []; // Will be caught by storedDetails above
+        }
+        const details = Array.from(serviceCheckboxes)
+            .filter(checkbox => serviceIds.includes(checkbox.value))
+            .map(checkbox => {
+                const label = checkbox.closest('label');
+                const nameElement = label.querySelector('span.font-semibold');
+                const durationElement = label.querySelector('span.text-sm');
+                const priceElement = label.querySelector('span.text-xl');
+                return {
+                    id: checkbox.value,
+                    name: nameElement ? nameElement.textContent : 'Service',
+                    duration: parseInt(checkbox.getAttribute('data-duration') || '0'),
+                    price: parseFloat(priceElement ? priceElement.textContent.replace(' SEK', '') : 0)
+                };
+            });
+        // If details found, store them for later use (best practice: cache to avoid repeated DOM queries)
+        if (details.length > 0) {
+            sessionStorage.setItem('selectedServicesDetails', JSON.stringify(details));
+        }
+        return details;
+    }
+
+    function updateSelectedServicesSummary() {
+        const serviceIds = getSelectedServiceIds();
+        const summaryElement = document.getElementById('selected-services-summary');
+        const selectedTime = document.getElementById('selected-time')?.value || 'Not selected';
+        const selectedStylist = document.getElementById('stylist-select')?.options[document.getElementById('stylist-select')?.selectedIndex]?.text || 'Not selected';
+
+        if (!summaryElement) {
+            console.warn('Summary element not found');
+            return;
+        }
+
+        console.log('Updating summary - Service IDs:', serviceIds, 'Time:', selectedTime, 'Stylist:', selectedStylist);
+
+        if (serviceIds.length === 0) {
+            // Improved fallback: Use DaisyUI alert for better UX instead of plain text
+            summaryElement.innerHTML = `
+            <div class="alert alert-warning shadow-lg">
+                <svg xmlns="http://www.w3.org/2000/svg" class="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
+                <span>No services selected yet. Please choose from the list above.</span>
+            </div>
+        `;
+            return;
+        }
+
+        const selectedServices = getSelectedServiceDetails();
+        console.log('Fetched service details:', selectedServices);
+
+        if (selectedServices.length === 0) {
+            summaryElement.innerHTML = `
+            <div class="alert alert-info shadow-lg">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="stroke-info shrink-0 w-6 h-6"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                <span>Services selected but details not loaded. Please select again.</span>
+            </div>
+        `;
+            return;
+        }
+
+        // Calculate totals using reduce (modern, efficient way)
+        const totalDuration = selectedServices.reduce((sum, s) => sum + s.duration, 0);
+        const totalPrice = selectedServices.reduce((sum, s) => sum + s.price, 0);
+
+        // Build HTML with DaisyUI card, divided list, icons, and badges
+        let summaryHTML = `
+        <div class="card bg-base-100 shadow-md">
+            <div class="card-body p-4">
+                <h2 class="card-title text-lg font-bold mb-2 flex items-center">
+                    <svg class="w-5 h-5 mr-2 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path>
+                    </svg>
+                    Booking Summary
+                </h2>
+                <ul class="divide-y divide-gray-200">
+    `;
+
+        selectedServices.forEach(service => {
+            summaryHTML += `
+            <li class="py-2 flex justify-between items-center">
+                <div class="flex items-center">
+                    <svg class="w-4 h-4 mr-2 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                    <span class="font-medium">${service.name}</span>
+                </div>
+                <div class="text-right">
+                    <div class="text-sm text-gray-600">${service.duration} min</div>
+                    <span class="badge badge-primary font-bold">${service.price} SEK</span>
+                </div>
+            </li>
+        `;
+        });
+
+        summaryHTML += `
+                </ul>
+                <div class="mt-4 pt-2 border-t border-gray-300 font-bold flex justify-between">
+                    <span>Total:</span>
+                    <div class="text-right">
+                        <div class="text-sm">${totalDuration} min</div>
+                        <span class="badge badge-lg badge-secondary">${totalPrice} SEK</span>
+                    </div>
+                </div>
+                <div class="mt-4 grid grid-cols-2 gap-2 text-sm">
+                    <div class="p-2  rounded flex items-center">
+                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                        Time: ${selectedTime}
+                    </div>
+                    <div class="p-2  rounded flex items-center">
+                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                        </svg>
+                        Stylist: ${selectedStylist}
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+
+        summaryElement.innerHTML = summaryHTML;
+        console.log('Summary updated successfully');
+    }
+
+    //main set up
     document.addEventListener('DOMContentLoaded', function() {
         initializeServiceSelection();
         if (document.getElementById('final-booking-form')) {
@@ -616,5 +652,6 @@
         });
     });
 </script>
+
 </body>
 </html>
