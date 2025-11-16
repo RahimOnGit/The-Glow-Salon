@@ -14,7 +14,6 @@
                     <li><a href="#" class="hover:text-primary transition-colors">Contact</a></li>
                     <!-- menu items for logged-in users -->
                     <li id="mobile-my-appointments" class="hidden"><a href="/my-appointments" class="hover:text-primary transition-colors">My Appointments</a></li>
-                    <li id="mobile-dashboard" class="hidden"><a href="/dashboard" class="hover:text-primary transition-colors">Dashboard</a></li>
                     <li id="mobile-logout" class="hidden"><a href="/logout" class="hover:bg-error hover:text-error-content">Logout</a></li>
                 </ul>
             </div>
@@ -132,7 +131,6 @@
                 })
                 .catch(error => {
                     console.error("Error checking auth status:", error);
-                    // Fallback: show login button
                     const loginLink = document.getElementById("login-link");
                     const profileDropdown = document.getElementById("profile-dropdown");
                     if (loginLink) loginLink.classList.remove("hidden");
