@@ -12,7 +12,6 @@ import java.time.LocalTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
-// ✅ Viktigt: använd fullt kvalificerat namn för Spring-annotationen
 @org.springframework.stereotype.Service
 public class AppointmentService {
 
@@ -115,6 +114,14 @@ public class AppointmentService {
         } catch (Exception e) {
             throw new RuntimeException("Failed to book appointment: " + e.getMessage(), e);
         }
+    }
+
+    @Transactional
+    public void updateAppointmentStatus(Long id, AppointmentStatus status) {
+        Appointment appointment = getAppointmentById(id)
+                .orElseThrow(() -> new RuntimeException("Appointment not found"));
+        appointment.setStatus(status);
+        appointmentRepository.save(appointment);
     }
 
     private boolean hasTimeConflict(Employee employee, LocalDate date, LocalTime startTime, int duration) {

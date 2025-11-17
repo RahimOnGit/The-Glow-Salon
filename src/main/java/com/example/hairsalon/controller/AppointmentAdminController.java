@@ -7,10 +7,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
 import java.util.Collections;
@@ -38,5 +35,11 @@ public class AppointmentAdminController {
         return appointments.isEmpty()
                 ? ResponseEntity.ok(Collections.emptyList())
                 : ResponseEntity.ok(appointments);
+    }
+
+    @PutMapping("/{id}/status")
+    public ResponseEntity<?> updateStatus(@PathVariable Long id, @RequestParam AppointmentStatus status) {
+        appointmentService.updateAppointmentStatus(id, status);
+        return ResponseEntity.ok().build();
     }
 }
