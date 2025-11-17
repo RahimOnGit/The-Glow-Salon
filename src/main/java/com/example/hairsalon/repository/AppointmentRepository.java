@@ -22,4 +22,27 @@ public interface AppointmentRepository extends JpaRepository<Appointment, Long> 
 
     @Query("SELECT COUNT(a) FROM Appointment a WHERE a.user.userId = :userId AND a.status = :status AND a.date >= :date")
     long countByUserUserIdAndStatusAndDateGreaterThanEqual(@Param("userId") Long userId, @Param("status") AppointmentStatus status, @Param("date") LocalDate date);
+
+    @Query("""
+        SELECT a FROM Appointment a
+        WHERE (:userName IS NULL OR LOWER(CONCAT(a.user.firstName, ' ', a.user.lastName)) 
+               LIKE LOWER(CONCAT('%', :userName, '%')))
+          AND (:employeeName IS NULL OR LOWER(CONCAT(a.employee.firstName, ' ', a.employee.lastName)) 
+               LIKE LOWER(CONCAT('%', :employeeName, '%')))
+          AND (:status IS NULL OR a.status = :status)
+          AND (:fromDate IS NULL OR a.date >= :fromDate)
+          AND (:toDate IS NULL OR a.date <= :toDate)
+        ORDER BY a.date DESC, a.time DESC
+    """)
+    List<Appointment> findFilteredAppointments(
+            @Param("userName") String userName,
+            @Param("employeeName") String employeeName,
+            @Param("status") AppointmentStatus status,
+            @Param("fromDate") LocalDate fromDate,
+            @Param("toDate") LocalDate toDate
+    );
+
+    @Query("SELECT a FROM Appointment a WHERE a.status = :status AND a.date < :date")
+    List<Appointment> findByStatusAndDateBefore(@Param("status") AppointmentStatus status, @Param("date") LocalDate date);
+
 }

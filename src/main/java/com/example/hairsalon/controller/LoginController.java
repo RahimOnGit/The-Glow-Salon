@@ -59,21 +59,12 @@ public class LoginController {
         }
         String email = auth.getName();
         Optional<User> userOpt = userService.getUserByEmail(email);
-// if (userOpt.isPresent()) {
-// model.addAttribute("user", userOpt.get());
-// } else {
-// // Log error and redirect to login
-// model.addAttribute("error", "User data not found. Please log in again.");
-// return "redirect:/login";
-// }
-// return "dashboard";
-// }
         if (userOpt.isPresent()) {
             User user = userOpt.get();
             model.addAttribute("user", user);
             // Check role and return appropriate dashboard
             if ("admin".equals(user.getRole())) {
-                return "adminDashboard"; // Serves adminDashboard.html
+                return "redirect:/admin/services";  // Redirect to services page
             } else {
                 return "salon/services"; // Serves dashboard.html for other users
             }

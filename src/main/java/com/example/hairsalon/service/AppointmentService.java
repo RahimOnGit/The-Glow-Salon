@@ -1,5 +1,6 @@
 package com.example.hairsalon.service;
 
+import com.example.hairsalon.dto.AppointmentAdminDTO;
 import com.example.hairsalon.dto.BookingRequest;
 import com.example.hairsalon.entity.Appointment;
 import com.example.hairsalon.entity.AppointmentStatus;
@@ -9,6 +10,7 @@ import com.example.hairsalon.entity.Service;
 import com.example.hairsalon.entity.User;
 import com.example.hairsalon.repository.AppointmentRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -49,6 +51,48 @@ public class AppointmentService {
         User user = userService.getUserById(userId).orElseThrow(() -> new RuntimeException("User not found"));
         return appointmentRepository.findByUserSortedByDateAndTime(user);
     }
+
+
+    public List<AppointmentAdminDTO> getAppointmentsForAdmin(
+            String customer,
+            String stylist,
+            AppointmentStatus status,
+            LocalDate from,
+            LocalDate to
+    ) {
+        autoCancelOverduePendingAppointments();
+
+        List<Appointment> appointments = appointmentRepository.findFilteredAppointments(customer, stylist, status, from, to);
+
+        return appointments.stream()
+                .map(a -> new AppointmentAdminDTO(
+                        a.getAppointmentId(),
+                        a.getUser() != null ? a.getUser().getFirstName() + " " + a.getUser().getLastName() : "-",
+                        a.getEmployee() != null ? a.getEmployee().getFirstName() + " " + a.getEmployee().getLastName() : "-",
+                        a.getServices() != null
+                                ? a.getServices().stream()
+                                // 👇 Pekar uttryckligen på din entityklass
+                                .map(com.example.hairsalon.entity.Service::getName)
+                                .collect(Collectors.joining(", "))
+                                : "-",
+                        a.getLocation() != null ? a.getLocation().getName() : "-",
+                        a.getDate(),
+                        a.getTime(),
+                        a.getStatus() != null ? a.getStatus().name() : "-"
+                ))
+                .collect(Collectors.toList());
+    }
+
+    @Transactional
+    public void updateAppointmentStatus(Long id, AppointmentStatus status) {
+        Appointment appointment = getAppointmentById(id)
+                .orElseThrow(() -> new RuntimeException("Appointment not found"));
+        appointment.setStatus(status);
+        appointmentRepository.save(appointment);
+    }
+
+
+
 
     @Transactional
     public Appointment bookAppointment(BookingRequest request) {
@@ -141,5 +185,24 @@ public class AppointmentService {
         LocalDate today = LocalDate.now();
         return (int) appointmentRepository.countByUserUserIdAndStatusAndDateGreaterThanEqual(userId, AppointmentStatus.PENDING, today);
     }
+
+
+    @Transactional
+    @Scheduled(cron = "0 0 0 * * ?") // Run daily at
+    public void autoCancelOverduePendingAppointments() {
+        LocalDate today = LocalDate.now();
+        List<Appointment> overduePending = appointmentRepository.findByStatusAndDateBefore(AppointmentStatus.PENDING, today);
+        int cancelledCount = 0;
+        for (Appointment appointment : overduePending) {
+            appointment.setStatus(AppointmentStatus.CANCELLED);
+            appointmentRepository.save(appointment);
+            cancelledCount++;
+        }
+        if (cancelledCount > 0) {
+            System.out.println("Auto-cancelled " + cancelledCount + " overdue pending appointments.");
+        }
+    }
+
+
 
 }

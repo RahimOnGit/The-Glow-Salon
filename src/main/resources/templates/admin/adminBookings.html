@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="lofi">
+<head>
+    <meta charset="UTF-8">
+    <title>Admin Bookings - The Glow Salon</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/daisyui@4.12.10/dist/full.min.css" rel="stylesheet" type="text/css" />
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+    <script src="https://unpkg.com/htmx.org/dist/ext/json-enc.js"></script>
+</head>
+<body class="min-h-screen bg-base-200">
+<!-- Navigation -->
+<div class="navbar bg-base-100 shadow-lg">
+    <div class="navbar-start">
+        <a href="/admin/services" class="btn btn-ghost text-xl">The Glow Salon - Admin</a>
+    </div>
+    <div class="navbar-center">
+        <ul class="menu menu-horizontal px-1">
+            <li><a href="/admin/services" class="font-semibold">Services Management</a></li>
+            <li><a href="/admin/bookings" class="font-semibold">Bookings</a></li>
+            <li><a href="/admin/users">Users</a></li>
+        </ul>
+    </div>
+    <div class="navbar-end">
+        <form action="/logout" method="post" class="m-0">
+            <button type="submit" class="btn btn-ghost">Logout</button>
+        </form>
+    </div>
+</div>
+
+<div class="container mx-auto p-6">
+    <!-- Welcome Section -->
+    <div class="hero bg-base-100 rounded-lg shadow-md mb-8">
+        <div class="hero-content text-center">
+            <div class="max-w-md">
+                <h1 class="text-4xl font-bold">Admin Dashboard</h1>
+                <p class="py-4">Welcome back, <span id="admin-name">Admin</span>!</p>
+                <p class="text-sm text-gray-600">You have full administrative privileges</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bookings Section -->
+    <div id="bookings-section" class="mb-12">
+        <h2 class="text-2xl font-bold mb-4">Appointments / Bookings</h2>
+
+        <!-- Filter -->
+        <div class="flex flex-wrap gap-2 mb-4">
+            <input type="text" id="customerFilter" placeholder="Customer name" class="input input-bordered">
+            <input type="text" id="stylistFilter" placeholder="Stylist name" class="input input-bordered">
+            <select id="statusFilter" class="select select-bordered">
+                <option value="">All Status</option>
+                <option value="PENDING">Pending</option>
+                <option value="CONFIRMED">Confirmed</option>
+                <option value="CANCELLED">Cancelled</option>
+                <option value="COMPLETED">Completed</option>
+            </select>
+            <input type="date" id="fromDate" class="input input-bordered">
+            <input type="date" id="toDate" class="input input-bordered">
+            <button class="btn btn-primary" onclick="loadAppointmentsWithParams()">Filter</button>
+        </div>
+
+        <!-- Bookings Table -->
+        <div class="max-h-96 overflow-y-auto bg-base-100 rounded-lg shadow-md">
+            <table class="table table-zebra w-full">
+                <thead>
+                <tr>
+                    <th class="sticky top-0 z-10 bg-base-100">ID</th>
+                    <th class="sticky top-0 z-10 bg-base-100">Customer</th>
+                    <th class="sticky top-0 z-10 bg-base-100">Stylist</th>
+                    <th class="sticky top-0 z-10 bg-base-100">Services</th>
+                    <th class="sticky top-0 z-10 bg-base-100">Location</th>
+                    <th class="sticky top-0 z-10 bg-base-100">Date</th>
+                    <th class="sticky top-0 z-10 bg-base-100">Time</th>
+                    <th class="sticky top-0 z-10 bg-base-100">Status</th>
+                    <th class="sticky top-0 z-10 bg-base-100">Actions</th>
+                </tr>
+                </thead>
+                <tbody id="appointmentsTableBody">
+                <tr>
+                    <td colspan="9" class="text-center py-8 text-gray-500">Loading appointments...</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Error Toast -->
+<div id="error-toast" class="toast toast-top toast-end hidden">
+    <div class="alert alert-error">
+        <span id="error-message"></span>
+    </div>
+</div>
+
+<!-- Success Toast -->
+<div id="success-toast" class="toast toast-top toast-end hidden">
+    <div class="alert alert-success">
+        <span id="success-message"></span>
+    </div>
+</div>
+
+<script>
+    // Utility function to escape HTML
+    function escapeHtml(unsafe) {
+        return unsafe.replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;");
+    }
+
+    // Get JWT token from localStorage or cookie
+    function getAuthToken() {
+        // För testning, om du inte har JWT ännu
+        const token = localStorage.getItem('jwtToken') || getCookie('jwtToken');
+        if (!token) {
+            console.warn('No JWT token found. Make sure you are logged in.');
+        }
+        return token;
+    }
+
+    function getCookie(name) {
+        const value = `; ${document.cookie}`;
+        const parts = value.split(`; ${name}=`);
+        if (parts.length === 2) return parts.pop().split(';').shift();
+        return null;
+    }
+
+    // Initialize dashboard when DOM is loaded
+    document.addEventListener('DOMContentLoaded', function() {
+        loadAppointmentsWithParams();  // Initial load with empty filters
+    });
+
+    // --- Bookings Management Functions ---
+    function loadAppointmentsWithParams() {
+        // Bygg query parameters från filter
+        const params = new URLSearchParams();
+
+        const customer = document.getElementById('customerFilter').value;
+        const stylist = document.getElementById('stylistFilter').value;
+        const status = document.getElementById('statusFilter').value;
+        const fromDate = document.getElementById('fromDate').value;
+        const toDate = document.getElementById('toDate').value;
+
+        if (customer) params.append('customer', customer);
+        if (stylist) params.append('stylist', stylist);
+        if (status) params.append('status', status);
+        if (fromDate) params.append('from', fromDate);
+        if (toDate) params.append('to', toDate);
+
+        const url = `/api/admin/appointments?${params.toString()}`;
+
+        fetch(url, {
+            method: 'GET',
+            headers: {
+                'Authorization': 'Bearer ' + getAuthToken(),
+                'Content-Type': 'application/json'
+            }
+        })
+            .then(response => {
+                if (!response.ok) throw new Error('Failed to load appointments: ' + response.status);
+                return response.json();
+            })
+            .then(appointments => {
+                console.log('Filtered appointments:', appointments);
+                updateAppointmentsTable(appointments);
+                if (appointments.length > 0) {
+                    showSuccess(`Found ${appointments.length} appointments`);
+                }
+            })
+            .catch(error => {
+                console.error('Error loading appointments:', error);
+                showError('Failed to load appointments: ' + error.message);
+            });
+    }
+
+    function updateAppointmentsTable(appointments) {
+        if (!appointments || appointments.length === 0) {
+            const tbody = document.getElementById('appointmentsTableBody');
+            tbody.innerHTML = `<tr><td colspan="9" class="text-center py-8 text-gray-500">No appointments found.</td></tr>`;
+            return;
+        }
+
+        // No frontend filtering needed since backend handles it
+        const tbody = document.getElementById('appointmentsTableBody');
+        if (appointments.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="9" class="text-center py-8 text-gray-500">No appointments match your filters.</td></tr>`;
+            return;
+        }
+
+        tbody.innerHTML = appointments.map(a => `
+            <tr>
+                <td class="font-mono">${a.appointmentId || a.id || 'N/A'}</td>
+                <td>${escapeHtml(a.customerName || a.customer || 'N/A')}</td>
+                <td>${escapeHtml(a.stylistName || a.stylist || 'N/A')}</td>
+                <td>${escapeHtml(a.serviceNames || 'N/A')}</td>
+                <td>${escapeHtml(a.location || 'N/A')}</td>
+                <td>${a.date || a.appointmentDate || 'N/A'}</td>
+                <td>${a.time || a.appointmentTime || 'N/A'}</td>
+                <td>
+                    <span class="badge ${getStatusBadgeClass(a.status)}">${a.status || 'UNKNOWN'}</span>
+                </td>
+                <td>
+                    <div class="dropdown dropdown-end">
+                        <label tabindex="0" class="btn btn-sm btn-outline btn-info m-1">Edit</label>
+                        <ul tabindex="0" class="dropdown-content z-[1] menu p-2 shadow bg-base-100 rounded-box w-52">
+                            <li><a onclick="updateStatus(${a.appointmentId || a.id}, 'CANCELLED')">Cancel Appointment</a></li>
+                            <li><a onclick="updateStatus(${a.appointmentId || a.id}, 'COMPLETED')">Complete Appointment</a></li>
+                        </ul>
+                    </div>
+                </td>
+            </tr>
+        `).join('');
+    }
+
+    function getStatusBadgeClass(status) {
+        if (!status) return 'badge-neutral';
+
+        const statusUpper = status.toUpperCase();
+        switch(statusUpper) {
+            case 'CONFIRMED': return 'badge-success';
+            case 'PENDING': return 'badge-warning';
+            case 'CANCELLED': return 'badge-error';
+            case 'COMPLETED': return 'badge-info';
+            default: return 'badge-neutral';
+        }
+    }
+
+    function updateStatus(id, status) {
+        fetch(`/api/admin/appointments/${id}/status?status=${status}`, {
+            method: 'PUT',
+            headers: {
+                'Authorization': 'Bearer ' + getAuthToken()
+            }
+        })
+            .then(response => {
+                if (response.ok) {
+                    showSuccess(`Appointment ${status.toLowerCase()} successfully`);
+                    loadAppointmentsWithParams();
+                } else {
+                    throw new Error('Failed to update status: ' + response.status);
+                }
+            })
+            .catch(error => {
+                console.error('Error updating status:', error);
+                showError(error.message);
+            });
+    }
+
+    // Toast notification functions
+    function showError(message) {
+        const toast = document.getElementById('error-toast');
+        document.getElementById('error-message').textContent = message;
+        toast.classList.remove('hidden');
+        setTimeout(() => toast.classList.add('hidden'), 5000);
+    }
+
+    function showSuccess(message) {
+        const toast = document.getElementById('success-toast');
+        document.getElementById('success-message').textContent = message;
+        toast.classList.remove('hidden');
+        setTimeout(() => toast.classList.add('hidden'), 3000);
+    }
+
+
+
+
+
+
+</script>
+
+</body>
+</html>
