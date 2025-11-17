@@ -5,6 +5,8 @@ import com.example.hairsalon.dto.BookingRequest;
 import com.example.hairsalon.entity.*;
 import com.example.hairsalon.repository.AppointmentRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
@@ -39,6 +41,9 @@ public class AppointmentService {
             LocalDate from,
             LocalDate to
     ) {
+        // Check and auto-cancel overdue pending appointments on load
+        autoCancelOverduePendingAppointments();
+
         List<Appointment> appointments = appointmentRepository.findFilteredAppointments(customer, stylist, status, from, to);
 
         return appointments.stream()
@@ -75,7 +80,6 @@ public class AppointmentService {
             User user = userService.getUserByEmail(email)
                     .orElseThrow(() -> new RuntimeException("User not found"));
 
-            // 👇 Här också tydliggör vi vilken Service du menar
             List<com.example.hairsalon.entity.Service> services = request.getServiceIds().stream()
                     .map(serviceId -> serviceService.getServiceById(serviceId)
                             .orElseThrow(() -> new RuntimeException("Service not found: " + serviceId)))
@@ -122,6 +126,22 @@ public class AppointmentService {
                 .orElseThrow(() -> new RuntimeException("Appointment not found"));
         appointment.setStatus(status);
         appointmentRepository.save(appointment);
+    }
+
+    @Transactional
+    @Scheduled(cron = "0 0 0 * * ?") // Run daily at midnight
+    public void autoCancelOverduePendingAppointments() {
+        LocalDate today = LocalDate.now();
+        List<Appointment> overduePending = appointmentRepository.findByStatusAndDateBefore(AppointmentStatus.PENDING, today);
+        int cancelledCount = 0;
+        for (Appointment appointment : overduePending) {
+            appointment.setStatus(AppointmentStatus.CANCELLED);
+            appointmentRepository.save(appointment);
+            cancelledCount++;
+        }
+        if (cancelledCount > 0) {
+            System.out.println("Auto-cancelled " + cancelledCount + " overdue pending appointments.");
+        }
     }
 
     private boolean hasTimeConflict(Employee employee, LocalDate date, LocalTime startTime, int duration) {

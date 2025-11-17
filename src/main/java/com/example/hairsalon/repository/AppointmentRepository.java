@@ -36,4 +36,7 @@ public interface AppointmentRepository extends JpaRepository<Appointment, Long> 
             @Param("fromDate") LocalDate fromDate,
             @Param("toDate") LocalDate toDate
     );
+
+    @Query("SELECT a FROM Appointment a WHERE a.status = :status AND a.date < :date")
+    List<Appointment> findByStatusAndDateBefore(@Param("status") AppointmentStatus status, @Param("date") LocalDate date);
 }
