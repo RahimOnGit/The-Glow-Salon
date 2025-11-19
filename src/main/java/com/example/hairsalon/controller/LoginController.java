@@ -50,6 +50,17 @@ public class LoginController {
         return "login";
     }
 
+    @GetMapping("/my-profile")
+    public String myProfile(Model model, Authentication auth) {
+        if (auth == null || !auth.isAuthenticated()) {
+            return "redirect:/login";
+        }
+        String email = auth.getName();
+        User user = userService.getUserByEmail(email).orElseThrow();
+        model.addAttribute("user", user);
+        return "my-profile";
+    }
+
     // Dashboard page
     @GetMapping("/dashboard")
     public String dashboard(Model model) {
