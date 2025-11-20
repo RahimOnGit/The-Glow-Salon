@@ -13,6 +13,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.List;
 import java.util.Optional;
@@ -175,10 +176,21 @@ public class AppointmentService {
 
     @Transactional
     public void completeAppointment(Long appointmentId) {
-        Appointment appointment = appointmentRepository.findById(appointmentId).orElseThrow(() -> new RuntimeException("Appointment not found"));
+        Appointment appointment = appointmentRepository.findById(appointmentId)
+                .orElseThrow(() -> new RuntimeException("Appointment not found"));
 
-        appointment.setStatus(AppointmentStatus.COMPLETED);
-        appointmentRepository.saveAndFlush(appointment);
+        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime appointmentDateTime = LocalDateTime.of(
+                appointment.getDate(),
+                appointment.getTime().plusMinutes(appointment.getTotalDuration())
+        );
+
+        if (now.isAfter(appointmentDateTime)) {
+            appointment.setStatus(AppointmentStatus.COMPLETED);
+            appointmentRepository.saveAndFlush(appointment);
+        } else {
+            throw new RuntimeException("Time has not passed yet");
+        }
     }
 
     public int getPendingUpcomingCount(Long userId) {

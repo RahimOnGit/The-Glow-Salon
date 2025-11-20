@@ -51,7 +51,7 @@ public class EmployeeController {
 
             System.out.println("Found employee: " + employee.getFirstName() + " " + employee.getLastName());
 
-            // Get today's appointments for this employee
+            // Get todays appointments for this employee
             LocalDate today = LocalDate.now();
             var todayAppointments = appointmentService.getAppointmentsByEmployeeAndDate(employee, today)
                     .stream()
