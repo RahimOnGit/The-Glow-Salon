@@ -94,7 +94,16 @@ public class LoginController {
         model.addAttribute("appointments", appointments);
         return "my-appointments";
     }
-
+    @GetMapping("/my-profile")
+    public String myProfile(Model model, Authentication auth) {
+        if (auth == null || !auth.isAuthenticated()) {
+            return "redirect:/login";
+        }
+        String email = auth.getName();
+        User user = userService.getUserByEmail(email).orElseThrow();
+        model.addAttribute("user", user);
+        return "my-profile";
+    }
     @PostMapping("/appointments/cancel")
     public String cancelAppointment(@RequestParam Long appointmentId, Authentication auth, Model model) {
         if (auth == null || !auth.isAuthenticated()) {

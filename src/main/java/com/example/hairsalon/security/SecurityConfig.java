@@ -92,7 +92,7 @@ public class SecurityConfig {
 //                        .requestMatchers("/api/appointments/*/complete").hasAnyRole("EMPLOYEE" , "ADMIN")
 //                        .requestMatchers("/api/appointments/*/complete").hasAnyRole("employee" , "admin")
 
-
+                                .requestMatchers("/my-profile").authenticated()
 
                         .anyRequest().authenticated()
                 )
