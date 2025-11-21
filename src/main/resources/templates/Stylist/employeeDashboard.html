@@ -2,52 +2,225 @@
 <html lang="en" data-theme="lofi">
 <head>
     <meta charset="UTF-8">
-    <title>Title</title>
-<!--tailwind and htmx set up -->
+    <title>Employee Dashboard</title>
+    <!--tailwind and htmx set up -->
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdn.jsdelivr.net/npm/daisyui@4.12.10/dist/full.min.css" rel="stylesheet" type="text/css" />
     <script src="https://unpkg.com/htmx.org@1.9.10"></script>
     <script src="https://unpkg.com/htmx.org/dist/ext/json-enc.js"></script>
-
+    <style>
+        .week-day {
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .week-day:hover {
+            background-color: #f3f4f6;
+            color : black;
+        }
+        .week-day.active {
+            background-color: black;
+            color: white;
+        }
+    </style>
 </head>
 <body class="min-h-screen bg-base-200">
 <!--navbar-->
 <div class="navbar bg-base-100">
-<!--    <div class=" flex-1 justify-center"><a href="/" class="text-xl font-bold ">dashboard</a></div>-->
-<div class="navbar-start"></div>
-    <div class="navbar-center ">
-    <a class="normal-case text-xl font-bold">Dashboard</a>
-</div>
+    <div class="navbar-start"></div>
+    <div class="navbar-center">
+        <a class="normal-case text-xl font-bold">Dashboard</a>
+    </div>
     <div class="navbar-end">
         <a href="/login" id="login-link" class="btn btn-primary rounded hidden">Login</a>
         <a href="/logout" id="logout-link" class="btn btn-primary rounded">Logout</a>
-
     </div>
 </div>
 
 <!--hero-->
-<div class="hero min-h-screen bg-base-200 ">
+<div class="hero min-h-screen bg-base-200">
     <div class="hero-content flex-col lg:flex-row-reverse">
-
-        <div class="text-center lg:text-left max-w-xl ">
+        <div class="text-center lg:text-left max-w-xl">
             <h1 class="text-5xl lg-text-6xl font-bold mb-4">
-
-                <span th:text="${stylist.getFirstName() + ' '+stylist.getLastName()} + '`s schedule'">  stylist name schedule: </span>
-
+                <span th:text="${stylist.getFirstName() + ' '+stylist.getLastName()} + '`s schedule'">stylist name schedule:</span>
             </h1>
-            <div th:replace="~{fragments/stylist-appointments::list(
-            title=${title},
-            appointments=${appointments}
-        )}">
-                Loading appointments...
+
+            <!-- Weekly Day Selector Button -->
+            <div class="mb-6">
+                <button class="btn btn-primary" onclick="showWeekSelector()">
+                    Select Day of Week
+                </button>
+                <span id="selected-day-display" class="ml-4 font-semibold">Today: <span id="current-date-display"></span></span>
             </div>
 
+            <div id="appointments-container">
+                <div th:replace="~{fragments/stylist-appointments::list(
+                    title=${title},
+                    appointments=${appointments}
+                )}">
+                    Loading appointments...
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Week Selector Modal -->
+<div id="week-selector-modal" class="modal modal-bottom sm:modal-middle">
+    <div class="modal-box">
+        <h3 class="font-bold text-lg">Select Day of Week</h3>
+        <p class="py-4">Choose a day from the current week to view appointments:</p>
+
+        <div class="grid grid-cols-3 gap-2 mb-4" id="week-days-container">
+            <!-- Week days  -->
+        </div>
+
+        <div class="modal-action">
+            <button class="btn" onclick="closeWeekSelector()">Close</button>
         </div>
     </div>
 </div>
 
 <script>
-    // Function to complete appointment
+    let currentSelectedDate = new Date().toISOString().split('T')[0]; // Today by default
+
+    // Function to show week selector modal
+    function showWeekSelector() {
+        const modal = document.getElementById('week-selector-modal');
+        modal.classList.add('modal-open');
+        populateWeekDays();
+    }
+
+    // Function to close week selector modal
+    function closeWeekSelector() {
+        const modal = document.getElementById('week-selector-modal');
+        modal.classList.remove('modal-open');
+    }
+
+    //  week days in the modal
+    function populateWeekDays() {
+        const container = document.getElementById('week-days-container');
+        container.innerHTML = '';
+
+        const today = new Date();
+        const currentDay = today.getDay(); // 0 = Sunday, 1 = Monday, etc.
+        const startOfWeek = new Date(today);
+        startOfWeek.setDate(today.getDate() - currentDay + (currentDay === 0 ? -6 : 1)); // Start from Monday
+
+        const daysOfWeek = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+
+        daysOfWeek.forEach((dayName, index) => {
+            const dayDate = new Date(startOfWeek);
+            dayDate.setDate(startOfWeek.getDate() + index);
+
+            const dateString = dayDate.toISOString().split('T')[0];
+            const formattedDate = dayDate.toLocaleDateString('en-US', {
+                month: 'short',
+                day: 'numeric'
+            });
+
+            const isActive = dateString === currentSelectedDate;
+            const isToday = dateString === new Date().toISOString().split('T')[0];
+
+            const dayElement = document.createElement('button');
+            dayElement.className = `week-day btn btn-outline ${isActive ? 'active btn-primary' : ''}`;
+            dayElement.innerHTML = `
+                <div>${dayName}</div>
+                <div class="text-xs">${formattedDate}${isToday ? ' (Today)' : ''}</div>
+            `;
+            dayElement.onclick = () => selectDay(dateString, dayName, formattedDate);
+
+            container.appendChild(dayElement);
+        });
+
+        // Update current date display
+        updateCurrentDateDisplay();
+    }
+
+    // Function to handle day selection
+    function selectDay(dateString, dayName, formattedDate) {
+        currentSelectedDate = dateString;
+        closeWeekSelector();
+        updateCurrentDateDisplay(dayName, formattedDate);
+        loadAppointmentsForDate(dateString);
+    }
+
+    // Function to update the current date display
+    function updateCurrentDateDisplay(dayName, formattedDate) {
+        const displayElement = document.getElementById('current-date-display');
+        if (dayName && formattedDate) {
+            displayElement.textContent = `${dayName}, ${formattedDate}`;
+        } else {
+            // Default to today
+            const today = new Date();
+            const todayName = today.toLocaleDateString('en-US', { weekday: 'long' });
+            const todayFormatted = today.toLocaleDateString('en-US', {
+                month: 'short',
+                day: 'numeric'
+            });
+            displayElement.textContent = `${todayName}, ${todayFormatted}`;
+        }
+    }
+
+    // Function to load appointments for a specific date
+    async function loadAppointmentsForDate(dateString) {
+        try {
+            const response = await fetch(`/api/employee/appointments?date=${dateString}`, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            });
+
+            if (response.ok) {
+                const appointments = await response.json();
+                updateAppointmentsDisplay(appointments, dateString);
+            } else {
+                console.error('Failed to load appointments for date:', dateString);
+                // Fallback: reload the page with the selected date as parameter
+                window.location.href = `/employee/dashboard?date=${dateString}`;
+            }
+        } catch (error) {
+            console.error('Error loading appointments:', error);
+            // Fallback: reload the page with the selected date as parameter
+            window.location.href = `/employee/dashboard?date=${dateString}`;
+        }
+    }
+
+    // Function to update appointments display
+    function updateAppointmentsDisplay(appointments, dateString) {
+        const container = document.getElementById('appointments-container');
+
+        // Format the date for display
+        const date = new Date(dateString);
+        const formattedDate = date.toLocaleDateString('en-US', {
+            weekday: 'long',
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+        });
+
+        // You'll need to adapt this based on your actual appointment data structure
+        // This is a simplified version - you might want to use HTMX or similar to render properly
+        if (appointments.length === 0) {
+            container.innerHTML = `
+                <div class="space-y-4">
+                    <h2 class="text-xl font-bold">${formattedDate}</h2>
+                    <div class="shadow-lg text-center py-8">
+                        <svg class="w-12 h-12 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                  d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                        </svg>
+                        <p class="text-lg">No appointments scheduled for ${formattedDate}</p>
+                    </div>
+                </div>
+            `;
+        } else {
+            // For now, we'll reload the page. In a real implementation, you'd update the content dynamically
+            window.location.href = `/employee/dashboard?date=${dateString}`;
+        }
+    }
+
+    // Function to complete appointment (existing function)
     async function completeAppointment(button) {
         const appointmentId = button.getAttribute('data-appointment-id');
 
@@ -64,18 +237,35 @@
                 // Reload the page to see updated status
                 location.reload();
             }
-
             else {
                 const error = await response.json();
                 alert('Error: ' + error.error);
             }
-
-
         } catch (error) {
             console.error('Error completing appointment:', error);
             alert('Network error. Please try again.');
         }
     }
+
+    // Initialize on page load
+    document.addEventListener('DOMContentLoaded', function() {
+        updateCurrentDateDisplay();
+
+        // Check if there's a date parameter in the URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const dateParam = urlParams.get('date');
+        if (dateParam) {
+            currentSelectedDate = dateParam;
+            // Parse and display the selected date
+            const date = new Date(dateParam);
+            const dayName = date.toLocaleDateString('en-US', { weekday: 'long' });
+            const formattedDate = date.toLocaleDateString('en-US', {
+                month: 'short',
+                day: 'numeric'
+            });
+            updateCurrentDateDisplay(dayName, formattedDate);
+        }
+    });
 </script>
 </body>
 </html>

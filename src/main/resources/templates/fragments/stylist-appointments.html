@@ -1,7 +1,6 @@
 <th:block th:fragment="list(title, appointments)">
     <div class="space-y-4">
-        <h2 th:text="${title}" class="text-xl font-bold">Today</h2>
-
+        <h2 th:text="${title}" id="today" class="text-xl font-bold">Today</h2>
         <!-- Empty State -->
         <div th:if="${#lists.isEmpty(appointments)}" class="shadow-lg text-center py-8">
             <svg class="w-12 h-12 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -58,4 +57,5 @@
             </div>
         </div>
     </div>
+
 </th:block>
