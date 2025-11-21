@@ -1,81 +1,279 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="lofi">
+<html lang="en" data-theme="lofi" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
-    <title>Title</title>
-<!--tailwind and htmx set up -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="${stylist.firstName + ' ' + stylist.lastName + ' - Dashboard'}">Stylist Dashboard</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://cdn.jsdelivr.net/npm/daisyui@4.12.10/dist/full.min.css" rel="stylesheet" type="text/css" />
+    <link href="https://cdn.jsdelivr.net/npm/daisyui@4.12.10/dist/full.min.css" rel="stylesheet"/>
     <script src="https://unpkg.com/htmx.org@1.9.10"></script>
-    <script src="https://unpkg.com/htmx.org/dist/ext/json-enc.js"></script>
-
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
 </head>
 <body class="min-h-screen bg-base-200">
-<!--navbar-->
-<div class="navbar bg-base-100">
-<!--    <div class=" flex-1 justify-center"><a href="/" class="text-xl font-bold ">dashboard</a></div>-->
-<div class="navbar-start"></div>
-    <div class="navbar-center ">
-    <a class="normal-case text-xl font-bold">Dashboard</a>
-</div>
-    <div class="navbar-end">
-        <a href="/login" id="login-link" class="btn btn-primary rounded hidden">Login</a>
-        <a href="/logout" id="logout-link" class="btn btn-primary rounded">Logout</a>
 
+<!-- Navbar -->
+<div class="navbar bg-base-100 shadow-lg sticky top-0 z-50">
+    <div class="navbar-start">
+        <a href="/" class="btn btn-ghost text-xl font-bold text-primary">The Glow Salon</a>
     </div>
-</div>
-
-<!--hero-->
-<div class="hero min-h-screen bg-base-200 ">
-    <div class="hero-content flex-col lg:flex-row-reverse">
-
-        <div class="text-center lg:text-left max-w-xl ">
-            <h1 class="text-5xl lg-text-6xl font-bold mb-4">
-
-                <span th:text="${stylist.getFirstName() + ' '+stylist.getLastName()} + '`s schedule'">  stylist name schedule: </span>
-
-            </h1>
-            <div th:replace="~{fragments/stylist-appointments::list(
-            title=${title},
-            appointments=${appointments}
-        )}">
-                Loading appointments...
-            </div>
+    <div class="navbar-center">
+        <h1 class="text-2xl font-bold">Stylist Dashboard</h1>
+    </div>
+       <div class="navbar-end">
+            <a href="/login" id="login-link" class="btn btn-primary rounded hidden">Login</a>
+            <a href="/logout" id="logout-link" class="btn btn-primary rounded">Logout</a>
 
         </div>
     </div>
 </div>
 
+<div class="container mx-auto px-4 py-10 max-w-6xl">
+
+    <!-- Welcome Header -->
+    <div class="text-center mb-10">
+        <h1 class="text-5xl font-bold text-primary mb-2">
+            Welcome back, <span th:text="${stylist.firstName}">Khaled</span>!
+        </h1>
+        <p class="text-xl text-base-content/70">Manage your schedule and availability</p>
+    </div>
+
+    <div class="grid lg:grid-cols-3 gap-8">
+
+        <!-- Today's Appointments -->
+        <div class="lg:col-span-2">
+            <div class="card bg-base-100 shadow-2xl">
+                <div class="card-body">
+                    <div class="flex justify-between items-center mb-6">
+                        <h2 class="card-title text-3xl">
+                            <i class="fas fa-calendar-day text-primary mr-3"></i>
+                            Today's Appointments
+                        </h2>
+                        <span class="badge badge-lg badge-primary" th:text="${#lists.size(appointments)} + ' appointments'">0</span>
+                    </div>
+
+                    <div th:replace="~{fragments/stylist-appointments :: list(title=${title}, appointments=${appointments})}">
+                        <p class="text-center py-8 text-base-content/50">No appointments today</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Close Shop / Availability -->
+        <div class="card bg-base-100 shadow-2xl h-fit">
+            <div class="card-body">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="card-title text-2xl">
+                        <i class="fas fa-calendar-xmark text-warning mr-3"></i>
+                        Close Shop
+                    </h2>
+                    <button class="btn btn-warning btn-circle btn-lg shadow-lg"
+                            onclick="document.getElementById('block-modal').showModal()">
+                        <i class="fas fa-plus text-xl"></i>
+                    </button>
+                </div>
+
+                <p class="text-sm text-base-content/60 mb-4">
+                    Block full days or specific hours when you're unavailable
+                </p>
+
+                <div id="blocked-dates-list" class="space-y-3 max-h-96 overflow-y-auto">
+                    <div class="text-center py-12 text-base-content/50">
+                        <i class="fas fa-calendar-check text-6xl mb-4"></i>
+                        <p>Loading blocked dates...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Block Modal -->
+<dialog id="block-modal" class="modal modal-bottom sm:modal-middle">
+    <div class="modal-box">
+        <h3 class="font-bold text-2xl mb-6 text-center text-primary">
+            <i class="fas fa-ban mr-3"></i> Block Date / Time
+        </h3>
+        <form id="block-form" class="space-y-6">
+            <div class="form-control">
+                <label class="label"><span class="label-text font-semibold">Date <span class="text-error">*</span></span></label>
+                <input type="date" name="date" class="input input-bordered input-lg" required/>
+            </div>
+
+            <div class="form-control">
+                <label class="label cursor-pointer justify-start gap-4">
+                    <input type="checkbox" id="full-day" class="checkbox checkbox-warning checkbox-lg"/>
+                    <span class="label-text text-lg">Block Full Day</span>
+                </label>
+            </div>
+
+            <div id="time-range" class="grid grid-cols-2 gap-6">
+                <div class="form-control">
+                    <label class="label"><span class="label-text">From</span></label>
+                    <input type="time" name="startTime" class="input input-bordered input-lg"/>
+                </div>
+                <div class="form-control">
+                    <label class="label"><span class="label-text">To</span></label>
+                    <input type="time" name="endTime" class="input input-bordered input-lg"/>
+                </div>
+            </div>
+
+            <div class="form-control">
+                <label class="label"><span class="label-text">Reason (optional)</span></label>
+                <input type="text" name="reason" class="input input-bordered input-lg" placeholder="Vacation, Wedding..."/>
+            </div>
+
+            <div class="modal-action flex gap-4">
+                <button type="button" class="btn btn-ghost btn-lg flex-1"
+                        onclick="document.getElementById('block-modal').close()">Cancel</button>
+                <button type="submit" class="btn btn-warning btn-lg flex-1">
+                    <i class="fas fa-ban mr-2"></i> Block Time
+                </button>
+            </div>
+        </form>
+    </div>
+</dialog>
+
+<!-- Toast -->
+<div class="toast toast-top toast-center z-50">
+    <div id="toast-success" class="alert alert-success hidden">
+        <span id="success-msg"></span>
+    </div>
+    <div id="toast-error" class="alert alert-error hidden">
+        <span id="error-msg"></span>
+    </div>
+</div>
+
 <script>
-    // Function to complete appointment
+    // Complete appointment
     async function completeAppointment(button) {
-        const appointmentId = button.getAttribute('data-appointment-id');
+        const id = button.getAttribute('data-appointment-id');
+        if (!confirm('Mark this appointment as completed?')) return;
 
         try {
-            const response = await fetch(`/api/appointments/${appointmentId}/complete`,{
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                }
-            });
-            if(response.ok) {
-                // Show success message
-                alert('Appointment marked as completed!');
-                // Reload the page to see updated status
-                location.reload();
+            const res = await fetch(`/api/appointments/${id}/complete`, { method: 'POST' });
+            if (res.ok) {
+                showToast('toast-success', 'Appointment marked as completed!');
+                setTimeout(() => location.reload(), 1500);
+            } else {
+                const err = await res.json();
+                showToast('toast-error', err.error || 'Failed to complete');
             }
-
-            else {
-                const error = await response.json();
-                alert('Error: ' + error.error);
-            }
-
-
-        } catch (error) {
-            console.error('Error completing appointment:', error);
-            alert('Network error. Please try again.');
+        } catch {
+            showToast('toast-error', 'Network error');
         }
     }
+
+    // Load blocked dates
+    async function loadBlockedDates() {
+        try {
+            const res = await fetch('/api/stylist/availability');
+            if (!res.ok) throw new Error();
+            const blocks = await res.json();
+            const container = document.getElementById('blocked-dates-list');
+
+            if (blocks.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-16 text-base-content/50">
+                        <i class="fas fa-calendar-check text-7xl mb-6 text-success"></i>
+                        <p class="text-2xl font-bold">No blocked dates</p>
+                        <p class="text-lg">You are fully available!</p>
+                    </div>`;
+                return;
+            }
+
+            container.innerHTML = blocks.map(b => `
+                <div class="alert alert-warning shadow hover:shadow-lg transition-shadow rounded-xl">
+                    <div class="flex-1">
+                        <div class="font-bold text-lg">
+                            ${new Date(b.date).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+                        </div>
+                        <div class="text-sm opacity-90 mt-1">
+                            ${b.type === 'BLOCKED'
+                ? '<span class="badge badge-error badge-lg">Full Day Closed</span>'
+                : `<span class="badge badge-warning badge-lg">${b.startTime} – ${b.endTime}</span>`}
+                            ${b.reason ? ` • ${b.reason}` : ''}
+                        </div>
+                    </div>
+                    <button class="btn btn-ghost btn-sm text-error" onclick="unblock(${b.id})">
+                        <i class="fas fa-trash-alt"></i>
+                    </button>
+                </div>
+            `).join('');
+        } catch {
+            document.getElementById('blocked-dates-list').innerHTML = `
+                <div class="alert alert-error">
+                    <span>Failed to load blocked dates</span>
+                </div>`;
+        }
+    }
+
+    // Remove block
+    async function unblock(id) {
+        if (!confirm('Remove this block? Customers will be able to book again.')) return;
+        try {
+            await fetch(`/api/stylist/availability/${id}`, { method: 'DELETE' });
+            showToast('toast-success', 'Block removed successfully');
+            loadBlockedDates();
+        } catch {
+            showToast('toast-error', 'Failed to remove block');
+        }
+    }
+
+    // Submit block form
+    document.getElementById('block-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const fd = new FormData(e.target);
+        const fullDay = document.getElementById('full-day').checked;
+
+        const payload = {
+            date: fd.get('date'),
+            startTime: fullDay ? null : fd.get('startTime'),
+            endTime: fullDay ? null : fd.get('endTime'),
+            reason: fd.get('reason') || null
+        };
+
+        try {
+            const res = await fetch('/api/stylist/availability/block', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            if (res.ok) {
+                document.getElementById('block-modal').close();
+                showToast('toast-success', 'Date blocked successfully!');
+                loadBlockedDates();
+                e.target.reset();
+            } else {
+                const err = await res.json();
+                showToast('toast-error', err.error || 'This date is already blocked');
+            }
+        } catch {
+            showToast('toast-error', 'Network error');
+        }
+    });
+
+    // Toggle time inputs when full day is checked
+    document.getElementById('full-day').addEventListener('change', function() {
+        document.getElementById('time-range').classList.toggle('hidden', this.checked);
+        if (this.checked) {
+            document.querySelectorAll('#time-range input').forEach(i => i.removeAttribute('required'));
+        } else {
+            document.querySelectorAll('#time-range input').forEach(i => i.setAttribute('required', ''));
+        }
+    });
+
+    // Toast helper
+    function showToast(id, message) {
+        const toast = document.getElementById(id);
+        document.getElementById(id === 'toast-success' ? 'success-msg' : 'error-msg').textContent = message;
+        toast.classList.remove('hidden');
+        setTimeout(() => toast.classList.add('hidden'), 5000);
+    }
+
+    // Initial load
+    document.addEventListener('DOMContentLoaded', loadBlockedDates);
 </script>
+
 </body>
 </html>

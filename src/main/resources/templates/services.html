@@ -344,13 +344,29 @@
                     return;
                 }
 
-                const result = await res.text();
+                const result = await res.json();
                 console.error('Booking failed:', res.status, result);
+
+                let errorMsg = result.error || 'Failed to book appointment';
+
+                if (errorMsg.includes("not available on the selected date")) {
+                    errorMsg = "⚠️ This stylist is not available on the selected date.";
+                } else if (errorMsg.includes("already booked") || errorMsg.includes("Time slot conflict")) {
+                    errorMsg = "⏰ This time slot is already taken. Please choose another time.";
+                }
+
                 const responseEl = document.getElementById('response');
                 if (responseEl) {
-                    responseEl.innerHTML = `<div class="alert alert-error">Booking failed: ${result || 'Unknown error (Status: ' + res.status + ')'}</div>`;
+                    responseEl.innerHTML = `
+                        <div class="alert alert-error shadow-lg">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                            </svg>
+                            <span>${errorMsg}</span>
+                        </div>
+                    `;
                 } else {
-                    alert(`Booking failed: ${result || 'Unknown error (Status: ' + res.status + ')'}`);
+                    alert(errorMsg);
                 }
                 // Stay on page - no redirect on other errors
             }

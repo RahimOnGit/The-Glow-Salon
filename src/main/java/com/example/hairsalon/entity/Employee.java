@@ -8,6 +8,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.ArrayList;
 import java.util.List;
 // In Employee.java entity
 @Entity
@@ -37,6 +38,11 @@ public class Employee {
     @OneToMany(mappedBy = "employee", cascade = CascadeType.ALL)
     @JsonBackReference
     private List<Appointment> appointments;
+
+
+    @OneToMany(mappedBy = "employee", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnore
+    private List<StylistAvailability> blockedDates = new ArrayList<>();
 
     // connect to User entity
     @OneToOne

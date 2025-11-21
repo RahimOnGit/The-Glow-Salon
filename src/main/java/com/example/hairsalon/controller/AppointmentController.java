@@ -18,10 +18,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @RestController
@@ -92,17 +89,29 @@ public class AppointmentController {
             @RequestParam LocalTime time,
             @RequestParam String serviceIds) {
 
-        List<Long> ids = Arrays.stream(serviceIds.split(",")).map(Long::parseLong).collect(Collectors.toList());
+        List<Long> ids = Arrays.stream(serviceIds.split(","))
+                .map(Long::parseLong)
+                .collect(Collectors.toList());
+
         int totalDuration = ids.stream()
                 .map(serviceService::getServiceById)
-                .filter(java.util.Optional::isPresent)
+                .filter(Optional::isPresent)
                 .mapToInt(s -> s.get().getDuration())
                 .sum();
 
-        var location = locationService.getLocationById(locationId);
-        List<Employee> available = employeeService.getAvailableEmployees(location, date, time, totalDuration);
+        Location location = locationService.getLocationById(locationId);
+
+
+        List<Employee> candidates = employeeService.getEmployeesByLocation(location);
+
+
+        List<Employee> available = candidates.stream()
+                .filter(employee -> !employeeService.isStylistBlockedOnDate(employee, date, time, totalDuration))
+                .collect(Collectors.toList());
+
         return ResponseEntity.ok(available);
     }
+
 
     @GetMapping("/locations")
     public ResponseEntity<?> getLocations() {
