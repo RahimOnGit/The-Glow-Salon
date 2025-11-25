@@ -1,12 +1,11 @@
 package com.example.hairsalon.service;
 
-import com.example.hairsalon.entity.Appointment;
-import com.example.hairsalon.entity.AppointmentStatus;
-import com.example.hairsalon.entity.Employee;
-import com.example.hairsalon.entity.Location;
+import com.example.hairsalon.entity.*;
 import com.example.hairsalon.repository.AppointmentRepository;
 import com.example.hairsalon.repository.EmployeeRepository;
+import com.example.hairsalon.repository.StylistAvailabilityRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
@@ -22,6 +21,12 @@ public class EmployeeService {
 
     @Autowired
     private AppointmentRepository appointmentRepository;
+
+    @Autowired
+    private UserService userService;
+
+    @Autowired
+    private StylistAvailabilityRepository stylistAvailabilityRepository;
 
     public Optional<Employee> getEmployeeByUserId(Long userId) {
         return employeeRepository.findByUserUserId(userId);
@@ -60,6 +65,38 @@ public class EmployeeService {
             LocalTime aEndTime = a.getTime().plusMinutes(a.getTotalDuration());
             if (startTime.isBefore(aEndTime) && endTime.isAfter(a.getTime())) {
                 return true;
+            }
+        }
+        return false;
+    }
+
+    public Employee getCurrentStylist(Authentication auth) {
+        String email = auth.getName();
+        User user = userService.getUserByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        return getEmployeeByUserId(user.getUserId())
+                .orElseThrow(() -> new RuntimeException("You are not a stylist"));
+    }
+
+
+    public boolean isStylistBlockedOnDate(Employee employee, LocalDate date, LocalTime requestStart, int duration) {
+        List<StylistAvailability> blocks = stylistAvailabilityRepository.findByEmployeeOrderByDateAsc(employee);
+
+        for (StylistAvailability block : blocks) {
+            if (!block.getDate().equals(date)) continue;
+
+            if (block.getType() == StylistAvailability.AvailabilityType.BLOCKED) {
+                return true;
+            }
+
+            if (block.getType() == StylistAvailability.AvailabilityType.PARTIAL) {
+                LocalTime blockStart = block.getStartTime();
+                LocalTime blockEnd = block.getEndTime();
+                LocalTime requestEnd = requestStart.plusMinutes(duration);
+
+                if (requestStart.isBefore(blockEnd) && requestEnd.isAfter(blockStart)) {
+                    return true;
+                }
             }
         }
         return false;

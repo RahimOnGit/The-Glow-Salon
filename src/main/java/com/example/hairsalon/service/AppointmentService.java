@@ -2,12 +2,7 @@ package com.example.hairsalon.service;
 
 import com.example.hairsalon.dto.AppointmentAdminDTO;
 import com.example.hairsalon.dto.BookingRequest;
-import com.example.hairsalon.entity.Appointment;
-import com.example.hairsalon.entity.AppointmentStatus;
-import com.example.hairsalon.entity.Employee;
-import com.example.hairsalon.entity.Location;
-import com.example.hairsalon.entity.Service;
-import com.example.hairsalon.entity.User;
+import com.example.hairsalon.entity.*;
 import com.example.hairsalon.repository.AppointmentRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -24,8 +19,6 @@ public class AppointmentService {
     @Autowired
     private AppointmentRepository appointmentRepository;
 
-
-
     @Autowired
     private UserService userService;
 
@@ -37,6 +30,10 @@ public class AppointmentService {
 
     @Autowired
     private LocationService locationService;
+
+    @Autowired
+    private StylistAvailabilityService stylistAvailabilityService;
+
 
     private static final long MAX_BOOKINGS_PER_DAY = 8;
 
@@ -119,8 +116,12 @@ public class AppointmentService {
             int totalDuration = services.stream().mapToInt(Service::getDuration).sum();
 
             // Conflict check with total duration
+            if (employeeService.isStylistBlockedOnDate(employee, request.getDate(), request.getTime(), totalDuration)) {
+                throw new RuntimeException("This stylist is not available on the selected date.");
+            }
+
             if (hasTimeConflict(employee, request.getDate(), request.getTime(), totalDuration)) {
-                throw new RuntimeException("Time slot conflict with existing appointment");
+                throw new RuntimeException("This time slot is already booked. Please choose another time.");
             }
 
             // Create appointment
@@ -163,6 +164,25 @@ public class AppointmentService {
     private boolean hasTimeConflict(Employee employee, LocalDate date, LocalTime startTime, int duration) {
         List<Appointment> existing = appointmentRepository.findByEmployeeAndDate(employee, date);
         LocalTime endTime = startTime.plusMinutes(duration);
+
+        List<StylistAvailability> blocked = stylistAvailabilityService.getByEmployee(employee);
+        for (StylistAvailability block : blocked) {
+            if (!block.getDate().equals(date)) continue;
+
+            if (block.getType() == StylistAvailability.AvailabilityType.BLOCKED) {
+                return true;
+            }
+
+            if (block.getType() == StylistAvailability.AvailabilityType.PARTIAL) {
+                LocalTime blockStart = block.getStartTime();
+                LocalTime blockEnd = block.getEndTime();
+                LocalTime requestEnd = startTime.plusMinutes(duration);
+
+                if (startTime.isBefore(blockEnd) && requestEnd.isAfter(blockStart)) {
+                    return true;
+                }
+            }
+        }
 
         for (Appointment a : existing) {
             if (!AppointmentStatus.CONFIRMED.equals(a.getStatus())) continue;

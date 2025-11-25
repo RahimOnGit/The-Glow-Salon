@@ -1,34 +1,24 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="lofi">
+<html lang="en" data-theme="lofi" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
-    <title>Employee Dashboard</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="${stylist.firstName + ' ' + stylist.lastName + ' - Dashboard'}">Stylist Dashboard</title>
     <!--tailwind and htmx set up -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://cdn.jsdelivr.net/npm/daisyui@4.12.10/dist/full.min.css" rel="stylesheet" type="text/css" />
+    <link href="https://cdn.jsdelivr.net/npm/daisyui@4.12.10/dist/full.min.css" rel="stylesheet"/>
     <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
     <script src="https://unpkg.com/htmx.org/dist/ext/json-enc.js"></script>
-    <style>
-        .week-day {
-            cursor: pointer;
-            transition: all 0.2s ease;
-        }
-        .week-day:hover {
-            background-color: #f3f4f6;
-            color : black;
-        }
-        .week-day.active {
-            background-color: black;
-            color: white;
-        }
-    </style>
 </head>
 <body class="min-h-screen bg-base-200">
 <!--navbar-->
-<div class="navbar bg-base-100">
-    <div class="navbar-start"></div>
+<div class="navbar bg-base-100 shadow-lg sticky top-0 z-50">
+    <div class="navbar-start">
+        <a href="/" class="btn btn-ghost text-xl font-bold text-primary">The Glow Salon</a>
+    </div>
     <div class="navbar-center">
-        <a class="normal-case text-xl font-bold">Dashboard</a>
+        <h1 class="text-2xl font-bold">Stylist Dashboard</h1>
     </div>
     <div class="navbar-end">
         <a href="/login" id="login-link" class="btn btn-primary rounded hidden">Login</a>
@@ -36,31 +26,130 @@
     </div>
 </div>
 
-<!--hero-->
-<div class="hero min-h-screen bg-base-200">
-    <div class="hero-content flex-col lg:flex-row-reverse">
-        <div class="text-center lg:text-left max-w-xl">
-            <h1 class="text-5xl lg-text-6xl font-bold mb-4">
-                <span th:text="${stylist.getFirstName() + ' '+stylist.getLastName()} + '`s schedule'">stylist name schedule:</span>
-            </h1>
+<div class="container mx-auto px-4 py-10 max-w-6xl">
+    <!-- Welcome Header -->
+    <div class="text-center mb-10">
+        <h1 class="text-5xl font-bold text-primary mb-2">
+            Welcome back, <span th:text="${stylist.firstName}">Khaled</span>!
+        </h1>
+        <p class="text-xl text-base-content/70">Manage your schedule and availability</p>
+    </div>
 
-            <!-- Weekly Day Selector Button -->
-            <div class="mb-6">
-                <button class="btn btn-primary" onclick="showWeekSelector()">
-                    Select Day of Week
-                </button>
-                <span id="selected-day-display" class="ml-4 font-semibold">Today: <span id="current-date-display"></span></span>
-            </div>
+    <div class="grid lg:grid-cols-3 gap-8">
+        <!-- Today's Appointments -->
+        <div class="lg:col-span-2">
+            <div class="card bg-base-100 shadow-2xl">
+                <div class="card-body">
+                    <div class="flex justify-between items-center mb-6">
+                        <h2 class="card-title text-3xl">
+                            <i class="fas fa-calendar-day text-primary mr-3"></i>
+                            Today's Appointments
+                        </h2>
+                        <span class="badge badge-lg badge-primary" th:text="${#lists.size(appointments)} + ' appointments'">0</span>
+                    </div>
 
-            <div id="appointments-container">
-                <div th:replace="~{fragments/stylist-appointments::list(
-                    title=${title},
-                    appointments=${appointments}
-                )}">
-                    Loading appointments...
+                    <!-- Weekly Day Selector Button -->
+                    <div class="mb-6">
+                        <button class="btn btn-primary" onclick="showWeekSelector()">
+                            Select Day of Week
+                        </button>
+                        <span id="selected-day-display" class="ml-4 font-semibold">Today: <span id="current-date-display"></span></span>
+                    </div>
+
+                    <div id="appointments-container">
+                        <div th:replace="~{fragments/stylist-appointments::list(
+                            title=${title},
+                            appointments=${appointments}
+                        )}">
+                            Loading appointments...
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
+
+        <!-- Close Shop / Availability -->
+        <div class="card bg-base-100 shadow-2xl h-fit">
+            <div class="card-body">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="card-title text-2xl">
+                        <i class="fas fa-calendar-xmark text-warning mr-3"></i>
+                        Close Shop
+                    </h2>
+                    <button class="btn btn-warning btn-circle btn-lg shadow-lg"
+                            onclick="document.getElementById('block-modal').showModal()">
+                        <i class="fas fa-plus text-xl"></i>
+                    </button>
+                </div>
+
+                <p class="text-sm text-base-content/60 mb-4">
+                    Block full days or specific hours when you're unavailable
+                </p>
+
+                <div id="blocked-dates-list" class="space-y-3 max-h-96 overflow-y-auto">
+                    <div class="text-center py-12 text-base-content/50">
+                        <i class="fas fa-calendar-check text-6xl mb-4"></i>
+                        <p>Loading blocked dates...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Block Modal -->
+<dialog id="block-modal" class="modal modal-bottom sm:modal-middle">
+    <div class="modal-box">
+        <h3 class="font-bold text-2xl mb-6 text-center text-primary">
+            <i class="fas fa-ban mr-3"></i> Block Date / Time
+        </h3>
+        <form id="block-form" method="dialog" class="space-y-6">
+            <div class="form-control">
+                <label class="label"><span class="label-text font-semibold">Date <span class="text-error">*</span></span></label>
+                <input type="date" name="date" id="block-date" class="input input-bordered input-lg" required/>
+            </div>
+
+            <div class="form-control">
+                <label class="label cursor-pointer justify-start gap-4">
+                    <input type="checkbox" id="full-day" class="checkbox checkbox-warning checkbox-lg"/>
+                    <span class="label-text text-lg">Block Full Day</span>
+                </label>
+            </div>
+
+            <div id="time-range" class="grid grid-cols-2 gap-6">
+                <div class="form-control">
+                    <label class="label"><span class="label-text">From</span></label>
+                    <input type="time" name="startTime" id="start-time" class="input input-bordered input-lg"/>
+                </div>
+                <div class="form-control">
+                    <label class="label"><span class="label-text">To</span></label>
+                    <input type="time" name="endTime" id="end-time" class="input input-bordered input-lg"/>
+                </div>
+            </div>
+
+            <div class="form-control">
+                <label class="label"><span class="label-text">Reason (optional)</span></label>
+                <input type="text" name="reason" id="block-reason" class="input input-bordered input-lg" placeholder="Vacation, Wedding..."/>
+            </div>
+
+            <div class="modal-action flex gap-4">
+                <button type="button" class="btn btn-ghost btn-lg flex-1"
+                        onclick="document.getElementById('block-modal').close()">Cancel</button>
+                <button type="button" class="btn btn-warning btn-lg flex-1" onclick="submitBlockForm()">
+                    <i class="fas fa-ban mr-2"></i> Block Time
+                </button>
+            </div>
+        </form>
+    </div>
+</dialog>
+
+<!-- Toast -->
+<div class="toast toast-top toast-center z-50">
+    <div id="toast-success" class="alert alert-success hidden">
+        <span id="success-msg"></span>
+    </div>
+    <div id="toast-error" class="alert alert-error hidden">
+        <span id="error-msg"></span>
     </div>
 </div>
 
@@ -71,7 +160,7 @@
         <p class="py-4">Choose a day from the current week to view appointments:</p>
 
         <div class="grid grid-cols-3 gap-2 mb-4" id="week-days-container">
-            <!-- Week days  -->
+            <!-- Week days will be populated here -->
         </div>
 
         <div class="modal-action">
@@ -81,7 +170,7 @@
 </div>
 
 <script>
-    let currentSelectedDate = new Date().toISOString().split('T')[0]; // Today by default
+    let currentSelectedDate = new Date().toISOString().split('T')[0];
 
     // Function to show week selector modal
     function showWeekSelector() {
@@ -96,15 +185,15 @@
         modal.classList.remove('modal-open');
     }
 
-    //  week days in the modal
+    // Populate week days in the modal
     function populateWeekDays() {
         const container = document.getElementById('week-days-container');
         container.innerHTML = '';
 
         const today = new Date();
-        const currentDay = today.getDay(); // 0 = Sunday, 1 = Monday, etc.
+        const currentDay = today.getDay();
         const startOfWeek = new Date(today);
-        startOfWeek.setDate(today.getDate() - currentDay + (currentDay === 0 ? -6 : 1)); // Start from Monday
+        startOfWeek.setDate(today.getDate() - currentDay + (currentDay === 0 ? -6 : 1));
 
         const daysOfWeek = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
@@ -122,6 +211,7 @@
             const isToday = dateString === new Date().toISOString().split('T')[0];
 
             const dayElement = document.createElement('button');
+            dayElement.type = 'button';
             dayElement.className = `week-day btn btn-outline ${isActive ? 'active btn-primary' : ''}`;
             dayElement.innerHTML = `
                 <div>${dayName}</div>
@@ -132,7 +222,6 @@
             container.appendChild(dayElement);
         });
 
-        // Update current date display
         updateCurrentDateDisplay();
     }
 
@@ -150,7 +239,6 @@
         if (dayName && formattedDate) {
             displayElement.textContent = `${dayName}, ${formattedDate}`;
         } else {
-            // Default to today
             const today = new Date();
             const todayName = today.toLocaleDateString('en-US', { weekday: 'long' });
             const todayFormatted = today.toLocaleDateString('en-US', {
@@ -164,24 +252,19 @@
     // Function to load appointments for a specific date
     async function loadAppointmentsForDate(dateString) {
         try {
-            const response = await fetch(`/api/employee/appointments?date=${dateString}`, {
-                method: 'GET',
-                headers: {
-                    'Content-Type': 'application/json',
-                }
-            });
+            // Try to use the employee appointments endpoint if available
+            const response = await fetch(`/api/appointments/employee/appointments?date=${dateString}`);
 
             if (response.ok) {
                 const appointments = await response.json();
                 updateAppointmentsDisplay(appointments, dateString);
             } else {
-                console.error('Failed to load appointments for date:', dateString);
-                // Fallback: reload the page with the selected date as parameter
+                // Fallback to page reload
+                console.log('Using fallback method for appointments');
                 window.location.href = `/employee/dashboard?date=${dateString}`;
             }
         } catch (error) {
             console.error('Error loading appointments:', error);
-            // Fallback: reload the page with the selected date as parameter
             window.location.href = `/employee/dashboard?date=${dateString}`;
         }
     }
@@ -189,8 +272,6 @@
     // Function to update appointments display
     function updateAppointmentsDisplay(appointments, dateString) {
         const container = document.getElementById('appointments-container');
-
-        // Format the date for display
         const date = new Date(dateString);
         const formattedDate = date.toLocaleDateString('en-US', {
             weekday: 'long',
@@ -199,66 +280,222 @@
             day: 'numeric'
         });
 
-        // You'll need to adapt this based on your actual appointment data structure
-        // This is a simplified version - you might want to use HTMX or similar to render properly
         if (appointments.length === 0) {
             container.innerHTML = `
                 <div class="space-y-4">
                     <h2 class="text-xl font-bold">${formattedDate}</h2>
-                    <div class="shadow-lg text-center py-8">
-                        <svg class="w-12 h-12 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <div class="shadow-lg text-center py-8 rounded-lg bg-base-100">
+                        <svg class="w-12 h-12 mx-auto mb-2 text-base-content/50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                   d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
                         </svg>
-                        <p class="text-lg">No appointments scheduled for ${formattedDate}</p>
+                        <p class="text-lg text-base-content/70">No appointments scheduled for ${formattedDate}</p>
                     </div>
                 </div>
             `;
         } else {
-            // For now, we'll reload the page. In a real implementation, you'd update the content dynamically
-            window.location.href = `/employee/dashboard?date=${dateString}`;
+            // Build dynamic appointments display
+            const appointmentsHTML = appointments.map(appt => `
+                <div class="card bg-base-100 shadow-md mb-4">
+                    <div class="card-body">
+                        <h3 class="card-title">Appointment at ${appt.time}</h3>
+                        <p>Status: ${appt.status}</p>
+                        <button class="btn btn-success btn-sm"
+                                onclick="completeAppointment(this)"
+                                data-appointment-id="${appt.appointmentId}">
+                            Mark Complete
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+
+            container.innerHTML = `
+                <div class="space-y-4">
+                    <h2 class="text-xl font-bold">${formattedDate}</h2>
+                    ${appointmentsHTML}
+                </div>
+            `;
         }
     }
 
-    // Function to complete appointment (existing function)
+    // Function to complete appointment
     async function completeAppointment(button) {
         const appointmentId = button.getAttribute('data-appointment-id');
+        if (!confirm('Mark this appointment as completed?')) return;
 
         try {
-            const response = await fetch(`/api/appointments/${appointmentId}/complete`,{
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                }
+            const res = await fetch(`/api/appointments/${appointmentId}/complete`, {
+                method: 'POST'
             });
-            if(response.ok) {
-                // Show success message
-                alert('Appointment marked as completed!');
-                // Reload the page to see updated status
-                location.reload();
-            }
-            else {
-                const error = await response.json();
-                alert('Error: ' + error.error);
+
+            if (res.ok) {
+                showToast('toast-success', 'Appointment marked as completed!');
+                setTimeout(() => location.reload(), 1500);
+            } else {
+                const err = await res.json();
+                showToast('toast-error', err.error || 'Failed to complete appointment');
             }
         } catch (error) {
             console.error('Error completing appointment:', error);
-            alert('Network error. Please try again.');
+            showToast('toast-error', 'Network error');
         }
+    }
+
+    // Load blocked dates
+    async function loadBlockedDates() {
+        try {
+            const res = await fetch('/api/stylist/availability');
+            if (!res.ok) throw new Error('Failed to fetch blocked dates');
+            const blocks = await res.json();
+            const container = document.getElementById('blocked-dates-list');
+
+            if (blocks.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-16 text-base-content/50">
+                        <i class="fas fa-calendar-check text-7xl mb-6 text-success"></i>
+                        <p class="text-2xl font-bold">No blocked dates</p>
+                        <p class="text-lg">You are fully available!</p>
+                    </div>`;
+                return;
+            }
+
+            container.innerHTML = blocks.map(block => `
+                <div class="alert alert-warning shadow hover:shadow-lg transition-shadow rounded-xl">
+                    <div class="flex-1">
+                        <div class="font-bold text-lg">
+                            ${new Date(block.date).toLocaleDateString('en-US', {
+                weekday: 'long',
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+            })}
+                        </div>
+                        <div class="text-sm opacity-90 mt-1">
+                            ${block.startTime === null || block.endTime === null
+                ? '<span class="badge badge-error badge-lg">Full Day Closed</span>'
+                : `<span class="badge badge-warning badge-lg">${block.startTime} – ${block.endTime}</span>`}
+                            ${block.reason ? ` • ${block.reason}` : ''}
+                        </div>
+                    </div>
+                    <button class="btn btn-ghost btn-sm text-error" onclick="unblockDate(${block.id})">
+                        <i class="fas fa-trash-alt"></i>
+                    </button>
+                </div>
+            `).join('');
+        } catch (error) {
+            console.error('Error loading blocked dates:', error);
+            document.getElementById('blocked-dates-list').innerHTML = `
+                <div class="alert alert-error">
+                    <span>Failed to load blocked dates. Please try again.</span>
+                </div>`;
+        }
+    }
+
+    // Submit block form
+    async function submitBlockForm() {
+        const date = document.getElementById('block-date').value;
+        const fullDay = document.getElementById('full-day').checked;
+        const startTime = document.getElementById('start-time').value;
+        const endTime = document.getElementById('end-time').value;
+        const reason = document.getElementById('block-reason').value;
+
+        if (!date) {
+            showToast('toast-error', 'Please select a date');
+            return;
+        }
+
+        if (!fullDay && (!startTime || !endTime)) {
+            showToast('toast-error', 'Please select start and end time');
+            return;
+        }
+
+        const payload = {
+            date: date,
+            startTime: fullDay ? null : startTime,
+            endTime: fullDay ? null : endTime,
+            reason: reason || null
+        };
+
+        try {
+            const res = await fetch('/api/stylist/availability/block', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(payload)
+            });
+
+            if (res.ok) {
+                document.getElementById('block-modal').close();
+                showToast('toast-success', 'Date blocked successfully!');
+                loadBlockedDates();
+                // Reset form
+                document.getElementById('block-form').reset();
+            } else {
+                const err = await res.json();
+                showToast('toast-error', err.error || 'Failed to block date');
+            }
+        } catch (error) {
+            console.error('Error blocking date:', error);
+            showToast('toast-error', 'Network error');
+        }
+    }
+
+    // Remove block
+    async function unblockDate(id) {
+        if (!confirm('Remove this block? Customers will be able to book again.')) return;
+        try {
+            const res = await fetch(`/api/stylist/availability/${id}`, {
+                method: 'DELETE'
+            });
+
+            if (res.ok) {
+                showToast('toast-success', 'Block removed successfully');
+                loadBlockedDates();
+            } else {
+                showToast('toast-error', 'Failed to remove block');
+            }
+        } catch (error) {
+            console.error('Error removing block:', error);
+            showToast('toast-error', 'Network error');
+        }
+    }
+
+    // Toast helper
+    function showToast(id, message) {
+        const toast = document.getElementById(id);
+        document.getElementById(id === 'toast-success' ? 'success-msg' : 'error-msg').textContent = message;
+        toast.classList.remove('hidden');
+        setTimeout(() => toast.classList.add('hidden'), 5000);
     }
 
     // Initialize on page load
     document.addEventListener('DOMContentLoaded', function() {
+        loadBlockedDates();
         updateCurrentDateDisplay();
+
+        // Toggle time inputs when full day is checked
+        document.getElementById('full-day').addEventListener('change', function() {
+            const timeRange = document.getElementById('time-range');
+            const timeInputs = document.querySelectorAll('#time-range input');
+
+            if (this.checked) {
+                timeRange.classList.add('hidden');
+                timeInputs.forEach(input => {
+                    input.removeAttribute('required');
+                    input.value = '';
+                });
+            } else {
+                timeRange.classList.remove('hidden');
+                timeInputs.forEach(input => input.setAttribute('required', ''));
+            }
+        });
 
         // Check if there's a date parameter in the URL
         const urlParams = new URLSearchParams(window.location.search);
         const dateParam = urlParams.get('date');
         if (dateParam) {
             currentSelectedDate = dateParam;
-            // Parse and display the selected date
             const date = new Date(dateParam);
-            const dayName = date.toLocaleDateString('en-US', { weekday: 'long' });
+            const dayName = date.toLocaleDateString('en-US', {weekday: 'long'});
             const formattedDate = date.toLocaleDateString('en-US', {
                 month: 'short',
                 day: 'numeric'
