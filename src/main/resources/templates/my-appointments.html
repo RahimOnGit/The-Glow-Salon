@@ -1,3 +1,727 @@
+<!--<!DOCTYPE html>-->
+<!--<html lang="en" data-theme="lofi" xmlns:th="http://www.thymeleaf.org">-->
+<!--<head>-->
+<!--  <meta charset="UTF-8">-->
+<!--  <title>My Appointments - The Glow Salon</title>-->
+<!--  <script src="https://cdn.tailwindcss.com"></script>-->
+<!--  <link href="https://cdn.jsdelivr.net/npm/daisyui@4.12.10/dist/full.min.css" rel="stylesheet" type="text/css" />-->
+<!--  <script src="https://unpkg.com/htmx.org@1.9.10"></script>-->
+<!--</head>-->
+<!--<body class="min-h-screen bg-base-200">-->
+<!--&lt;!&ndash; Navbar &ndash;&gt;-->
+<!--<div th:replace="~{fragments/navbar :: navbar}"></div>-->
+<!--&lt;!&ndash; Main Content &ndash;&gt;-->
+<!--<div class="container mx-auto px-4 py-8">-->
+<!--  <div class="text-center mb-8">-->
+<!--    <h1 class="text-4xl font-bold mb-4">My Appointments</h1>-->
+<!--    <p class="text-lg text-base-content/70">Welcome back, <span th:text="${user.firstName}">Customer</span>! Here's your appointment history.</p>-->
+<!--    <div th:if="${error}" class="alert alert-error mt-4">-->
+<!--      <span th:text="${error}">Error message</span>-->
+<!--    </div>-->
+<!--  </div>-->
+<!--  &lt;!&ndash; Upcoming Appointments &ndash;&gt;-->
+<!--  <div class="mb-12">-->
+<!--    <h2 class="text-2xl font-bold mb-6 flex items-center">-->
+<!--      <svg class="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">-->
+<!--        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>-->
+<!--      </svg>-->
+<!--      Upcoming Appointments-->
+<!--    </h2>-->
+<!--    <div th:if="${appointments != null and !appointments.?[date >= T(java.time.LocalDate).now() and status.name() != 'CANCELLED'].isEmpty()}" class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">-->
+<!--      <div th:each="appointment : ${appointments.?[date >= T(java.time.LocalDate).now() and status.name() != 'CANCELLED']}"-->
+<!--           class="card bg-base-100 shadow-xl">-->
+<!--        <div class="card-body">-->
+<!--          <h3 class="card-title" th:text="${appointment.date} + ' at ' + ${appointment.time}">Date & Time</h3>-->
+<!--          <p class="text-sm text-base-content/70">-->
+<!--            <strong>Stylist:</strong> <span th:text="${appointment.employee.firstName} + ' ' + ${appointment.employee.lastName}">Name</span><br>-->
+<!--            <strong>Location:</strong> <span th:text="${appointment.location.name}">Location</span><br>-->
+<!--            <strong>Status:</strong> <span th:text="${appointment.status}">Status</span>-->
+<!--          </p>-->
+<!--          <ul class="mt-4 space-y-1">-->
+<!--            <li th:each="service : ${appointment.services}" class="text-sm">-->
+<!--              <span th:text="${service.name}">Service</span> (<span th:text="${service.duration} + ' min, ' + ${service.price} + ' SEK'">Details</span>)-->
+<!--            </li>-->
+<!--          </ul>-->
+<!--          <div class="mt-4 flex justify-between items-center">-->
+<!--            <span class="font-bold text-primary" th:text="${appointment.totalPrice} + ' SEK'">Total</span>-->
+<!--            <div class="space-x-2">-->
+<!--              <a th:href="@{/confirmation(appointmentId=${appointment.appointmentId})}" class="btn btn-sm btn-primary">View Details</a>-->
+<!--              <th:block th:if="${appointment.status.name() == 'PENDING' or appointment.status.name() == 'CONFIRMED'}">-->
+<!--                <form th:action="@{/appointments/cancel(appointmentId=${appointment.appointmentId})}" method="post" style="display: inline;">-->
+<!--                  <button type="submit" class="btn btn-sm btn-error" onclick="return confirm('Are you sure you want to cancel this appointment? This action cannot be undone.')">-->
+<!--                    Cancel-->
+<!--                  </button>-->
+<!--                </form>-->
+<!--              </th:block>-->
+
+<!--&lt;!&ndash;              <th:block th:if="${appointment.status.name() == 'COMPLETED'}">&ndash;&gt;-->
+<!--&lt;!&ndash;                <button class="btn btn-sm btn-outline btn-info rate-btn" th:attr="data-appointment-id=${appointment.appointmentId}">Rate Service</button>&ndash;&gt;-->
+<!--&lt;!&ndash;              </th:block>&ndash;&gt;-->
+<!--&lt;!&ndash;////&ndash;&gt;-->
+<!--              <th:block th:if="${appointment.status.name() == 'COMPLETED' and appointment.date &lt;= T(java.time.LocalDate).now()}">-->
+<!--                <button class="btn btn-sm btn-outline btn-info rate-btn" th:attr="data-appointment-id=${appointment.appointmentId}">Rate Service</button>-->
+<!--              </th:block>-->
+
+<!--            </div>-->
+<!--          </div>-->
+<!--        </div>-->
+<!--      </div>-->
+<!--    </div>-->
+<!--    <div th:if="${appointments == null or appointments.?[date >= T(java.time.LocalDate).now() and status.name() != 'CANCELLED'].isEmpty()}" class="text-center py-12">-->
+<!--      <svg class="w-16 h-16 mx-auto mb-4 text-base-content/30" fill="none" stroke="currentColor" viewBox="0 0 24 24">-->
+<!--        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>-->
+<!--      </svg>-->
+<!--      <p class="text-lg text-base-content/50">No upcoming appointments. <a th:href="@{/salon/services}" class="link link-primary">Book now!</a></p>-->
+<!--    </div>-->
+<!--  </div>-->
+<!--  &lt;!&ndash; Past Appointments &ndash;&gt;-->
+<!--  <div>-->
+<!--    <h2 class="text-2xl font-bold mb-6 flex items-center">-->
+<!--      <svg class="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">-->
+<!--        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>-->
+<!--      </svg>-->
+<!--      Past Appointments-->
+<!--    </h2>-->
+<!--    <div th:if="${appointments != null and !appointments.?[date &lt; T(java.time.LocalDate).now() and status.name() != 'CANCELLED'].isEmpty()}" class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">-->
+<!--      <div th:each="appointment : ${appointments.?[date &lt; T(java.time.LocalDate).now() and status.name() != 'CANCELLED']}"-->
+<!--           class="card bg-base-100 shadow-xl">-->
+<!--        <div class="card-body">-->
+<!--          <h3 class="card-title" th:text="${appointment.date} + ' at ' + ${appointment.time}">Date & Time</h3>-->
+<!--          <p class="text-sm text-base-content/70">-->
+<!--            <strong>Stylist:</strong> <span th:text="${appointment.employee.firstName} + ' ' + ${appointment.employee.lastName}">Name</span><br>-->
+<!--            <strong>Location:</strong> <span th:text="${appointment.location.name}">Location</span><br>-->
+<!--            <strong>Status:</strong> <span th:text="${appointment.status}">Status</span>-->
+<!--          </p>-->
+<!--          <ul class="mt-4 space-y-1">-->
+<!--            <li th:each="service : ${appointment.services}" class="text-sm">-->
+<!--              <span th:text="${service.name}">Service</span> (<span th:text="${service.duration} + ' min, ' + ${service.price} + ' SEK'">Details</span>)-->
+<!--            </li>-->
+<!--          </ul>-->
+<!--          <div class="mt-4 flex justify-between items-center">-->
+<!--            <span class="font-bold text-primary" th:text="${appointment.totalPrice} + ' SEK'">Total</span>-->
+<!--            <div class="space-x-2">-->
+<!--              <a th:href="@{/confirmation(appointmentId=${appointment.appointmentId})}" class="btn btn-sm btn-outline">View Details</a>-->
+<!--              <th:block th:if="${appointment.status.name() == 'PENDING' or appointment.status.name() == 'CONFIRMED'}">-->
+<!--                <form th:action="@{/appointments/cancel(appointmentId=${appointment.appointmentId})}" method="post" style="display: inline;">-->
+<!--                  <button type="submit" class="btn btn-sm btn-error" onclick="return confirm('Are you sure you want to cancel this appointment? This action cannot be undone.')">-->
+<!--                    Cancel-->
+<!--                  </button>-->
+<!--                </form>-->
+<!--              </th:block>-->
+<!--&lt;!&ndash;              <th:block th:if="${appointment.status.name() == 'COMPLETED'}">&ndash;&gt;-->
+<!--&lt;!&ndash;                <button class="btn btn-sm btn-outline btn-info rate-btn" th:attr="data-appointment-id=${appointment.appointmentId}">Rate Service</button>&ndash;&gt;-->
+<!--&lt;!&ndash;              </th:block>&ndash;&gt;-->
+
+<!--              <th:block th:if="${appointment.status.name() == 'COMPLETED' and appointment.date &lt;= T(java.time.LocalDate).now()}">-->
+<!--                <button class="btn btn-sm btn-outline btn-info rate-btn" th:attr="data-appointment-id=${appointment.appointmentId}">Rate Service</button>-->
+<!--              </th:block>-->
+<!--            </div>-->
+<!--          </div>-->
+<!--        </div>-->
+<!--      </div>-->
+<!--    </div>-->
+<!--    <div th:if="${appointments == null or appointments.?[date &lt; T(java.time.LocalDate).now() and status.name() != 'CANCELLED'].isEmpty()}" class="text-center py-12">-->
+<!--      <svg class="w-16 h-16 mx-auto mb-4 text-base-content/30" fill="none" stroke="currentColor" viewBox="0 0 24 24">-->
+
+<!--&lt;!&ndash;                /////&ndash;&gt;-->
+
+<!--&lt;!&ndash;              <th:block th:if="${appointment.status.name() == 'COMPLETED' and !${appointment.hasRating}}">&ndash;&gt;-->
+<!--&lt;!&ndash;                <button class="btn btn-sm btn-outline btn-info rate-btn" th:attr="data-appointment-id=${appointment.appointmentId}">Rate Service</button>&ndash;&gt;-->
+<!--&lt;!&ndash;              </th:block>&ndash;&gt;-->
+
+<!--&lt;!&ndash;              <th:block th:if="${appointment.status.name() == 'COMPLETED' and ${appointment.hasRating}}">&ndash;&gt;-->
+<!--&lt;!&ndash;                <span class="badge badge-success">✓ Rated</span>&ndash;&gt;-->
+<!--&lt;!&ndash;              </th:block>&ndash;&gt;-->
+
+<!--&lt;!&ndash;//////&ndash;&gt;-->
+<!--&lt;!&ndash;            </div>&ndash;&gt;-->
+<!--&lt;!&ndash;          </div>&ndash;&gt;-->
+<!--&lt;!&ndash;        </div>&ndash;&gt;-->
+<!--&lt;!&ndash;      </div>&ndash;&gt;-->
+<!--&lt;!&ndash;    </div>&ndash;&gt;-->
+<!--&lt;!&ndash;    <div th:if="${appointments == null or appointments.?[date &lt; T(java.time.LocalDate).now() and status.name() != 'CANCELLED'].isEmpty()}" class="text-center py-12">&ndash;&gt;-->
+<!--&lt;!&ndash;      <svg class="w-16 h-16 mx-auto mb-4 text-base-content/30" fill="none" stroke="currentColor" viewBox="0 0 24 24">&ndash;&gt;-->
+
+<!--        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z"></path>-->
+<!--      </svg>-->
+<!--      <p class="text-lg text-base-content/50">No past appointments yet. Your glow journey is just beginning!</p>-->
+<!--    </div>-->
+<!--  </div>-->
+<!--</div><!DOCTYPE html>-->
+<!--<html lang="en" data-theme="lofi" xmlns:th="http://www.thymeleaf.org">-->
+<!--<head>-->
+<!--  <meta charset="UTF-8">-->
+<!--  <title>My Appointments - The Glow Salon</title>-->
+<!--  <script src="https://cdn.tailwindcss.com"></script>-->
+<!--  <link href="https://cdn.jsdelivr.net/npm/daisyui@4.12.10/dist/full.min.css" rel="stylesheet" type="text/css" />-->
+<!--  <script src="https://unpkg.com/htmx.org@1.9.10"></script>-->
+<!--</head>-->
+<!--<body class="min-h-screen bg-base-200">-->
+<!--&lt;!&ndash; Navbar &ndash;&gt;-->
+<!--<div th:replace="~{fragments/navbar :: navbar}"></div>-->
+<!--&lt;!&ndash; Main Content &ndash;&gt;-->
+<!--<div class="container mx-auto px-4 py-8">-->
+<!--  <div class="text-center mb-8">-->
+<!--    <h1 class="text-4xl font-bold mb-4">My Appointments</h1>-->
+<!--    <p class="text-lg text-base-content/70">Welcome back, <span th:text="${user.firstName}">Customer</span>! Here's your appointment history.</p>-->
+<!--    <div th:if="${error}" class="alert alert-error mt-4">-->
+<!--      <span th:text="${error}">Error message</span>-->
+<!--    </div>-->
+<!--  </div>-->
+<!--  &lt;!&ndash; Upcoming Appointments &ndash;&gt;-->
+<!--  <div class="mb-12">-->
+<!--    <h2 class="text-2xl font-bold mb-6 flex items-center">-->
+<!--      <svg class="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">-->
+<!--        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>-->
+<!--      </svg>-->
+<!--      Upcoming Appointments-->
+<!--    </h2>-->
+<!--    <div th:if="${appointments != null and !appointments.?[date >= T(java.time.LocalDate).now() and status.name() != 'CANCELLED'].isEmpty()}" class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">-->
+<!--      <div th:each="appointment : ${appointments.?[date >= T(java.time.LocalDate).now() and status.name() != 'CANCELLED']}"-->
+<!--           class="card bg-base-100 shadow-xl">-->
+<!--        <div class="card-body">-->
+<!--          <h3 class="card-title" th:text="${appointment.date} + ' at ' + ${appointment.time}">Date & Time</h3>-->
+<!--          <p class="text-sm text-base-content/70">-->
+<!--            <strong>Stylist:</strong> <span th:text="${appointment.employee.firstName} + ' ' + ${appointment.employee.lastName}">Name</span><br>-->
+<!--            <strong>Location:</strong> <span th:text="${appointment.location.name}">Location</span><br>-->
+<!--            <strong>Status:</strong> <span th:text="${appointment.status}">Status</span>-->
+<!--          </p>-->
+<!--          <ul class="mt-4 space-y-1">-->
+<!--            <li th:each="service : ${appointment.services}" class="text-sm">-->
+<!--              <span th:text="${service.name}">Service</span> (<span th:text="${service.duration} + ' min, ' + ${service.price} + ' SEK'">Details</span>)-->
+<!--            </li>-->
+<!--          </ul>-->
+<!--          <div class="mt-4 flex justify-between items-center">-->
+<!--            <span class="font-bold text-primary" th:text="${appointment.totalPrice} + ' SEK'">Total</span>-->
+<!--            <div class="space-x-2">-->
+<!--              <a th:href="@{/confirmation(appointmentId=${appointment.appointmentId})}" class="btn btn-sm btn-primary">View Details</a>-->
+<!--              <th:block th:if="${appointment.status.name() == 'PENDING' or appointment.status.name() == 'CONFIRMED'}">-->
+<!--                <form th:action="@{/appointments/cancel(appointmentId=${appointment.appointmentId})}" method="post" style="display: inline;">-->
+<!--                  <button type="submit" class="btn btn-sm btn-error" onclick="return confirm('Are you sure you want to cancel this appointment? This action cannot be undone.')">-->
+<!--                    Cancel-->
+<!--                  </button>-->
+<!--                </form>-->
+<!--              </th:block>-->
+
+<!--              &lt;!&ndash;              <th:block th:if="${appointment.status.name() == 'COMPLETED'}">&ndash;&gt;-->
+<!--              &lt;!&ndash;                <button class="btn btn-sm btn-outline btn-info rate-btn" th:attr="data-appointment-id=${appointment.appointmentId}">Rate Service</button>&ndash;&gt;-->
+<!--              &lt;!&ndash;              </th:block>&ndash;&gt;-->
+<!--              &lt;!&ndash;////&ndash;&gt;-->
+<!--              <th:block th:if="${appointment.status.name() == 'COMPLETED' and appointment.date &lt;= T(java.time.LocalDate).now()}">-->
+<!--                <button class="btn btn-sm btn-outline btn-info rate-btn" th:attr="data-appointment-id=${appointment.appointmentId}">Rate Service</button>-->
+<!--              </th:block>-->
+
+<!--            </div>-->
+<!--          </div>-->
+<!--        </div>-->
+<!--      </div>-->
+<!--    </div>-->
+<!--    <div th:if="${appointments == null or appointments.?[date >= T(java.time.LocalDate).now() and status.name() != 'CANCELLED'].isEmpty()}" class="text-center py-12">-->
+<!--      <svg class="w-16 h-16 mx-auto mb-4 text-base-content/30" fill="none" stroke="currentColor" viewBox="0 0 24 24">-->
+<!--        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>-->
+<!--      </svg>-->
+<!--      <p class="text-lg text-base-content/50">No upcoming appointments. <a th:href="@{/salon/services}" class="link link-primary">Book now!</a></p>-->
+<!--    </div>-->
+<!--  </div>-->
+<!--  &lt;!&ndash; Past Appointments &ndash;&gt;-->
+<!--  <div>-->
+<!--    <h2 class="text-2xl font-bold mb-6 flex items-center">-->
+<!--      <svg class="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">-->
+<!--        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>-->
+<!--      </svg>-->
+<!--      Past Appointments-->
+<!--    </h2>-->
+<!--    <div th:if="${appointments != null and !appointments.?[date &lt; T(java.time.LocalDate).now() and status.name() != 'CANCELLED'].isEmpty()}" class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">-->
+<!--      <div th:each="appointment : ${appointments.?[date &lt; T(java.time.LocalDate).now() and status.name() != 'CANCELLED']}"-->
+<!--           class="card bg-base-100 shadow-xl">-->
+<!--        <div class="card-body">-->
+<!--          <h3 class="card-title" th:text="${appointment.date} + ' at ' + ${appointment.time}">Date & Time</h3>-->
+<!--          <p class="text-sm text-base-content/70">-->
+<!--            <strong>Stylist:</strong> <span th:text="${appointment.employee.firstName} + ' ' + ${appointment.employee.lastName}">Name</span><br>-->
+<!--            <strong>Location:</strong> <span th:text="${appointment.location.name}">Location</span><br>-->
+<!--            <strong>Status:</strong> <span th:text="${appointment.status}">Status</span>-->
+<!--          </p>-->
+<!--          <ul class="mt-4 space-y-1">-->
+<!--            <li th:each="service : ${appointment.services}" class="text-sm">-->
+<!--              <span th:text="${service.name}">Service</span> (<span th:text="${service.duration} + ' min, ' + ${service.price} + ' SEK'">Details</span>)-->
+<!--            </li>-->
+<!--          </ul>-->
+<!--          <div class="mt-4 flex justify-between items-center">-->
+<!--            <span class="font-bold text-primary" th:text="${appointment.totalPrice} + ' SEK'">Total</span>-->
+<!--            <div class="space-x-2">-->
+<!--              <a th:href="@{/confirmation(appointmentId=${appointment.appointmentId})}" class="btn btn-sm btn-outline">View Details</a>-->
+<!--              <th:block th:if="${appointment.status.name() == 'PENDING' or appointment.status.name() == 'CONFIRMED'}">-->
+<!--                <form th:action="@{/appointments/cancel(appointmentId=${appointment.appointmentId})}" method="post" style="display: inline;">-->
+<!--                  <button type="submit" class="btn btn-sm btn-error" onclick="return confirm('Are you sure you want to cancel this appointment? This action cannot be undone.')">-->
+<!--                    Cancel-->
+<!--                  </button>-->
+<!--                </form>-->
+<!--              </th:block>-->
+<!--              &lt;!&ndash;              <th:block th:if="${appointment.status.name() == 'COMPLETED'}">&ndash;&gt;-->
+<!--              &lt;!&ndash;                <button class="btn btn-sm btn-outline btn-info rate-btn" th:attr="data-appointment-id=${appointment.appointmentId}">Rate Service</button>&ndash;&gt;-->
+<!--              &lt;!&ndash;              </th:block>&ndash;&gt;-->
+
+<!--              <th:block th:if="${appointment.status.name() == 'COMPLETED' and appointment.date &lt;= T(java.time.LocalDate).now()}">-->
+<!--                <button class="btn btn-sm btn-outline btn-info rate-btn" th:attr="data-appointment-id=${appointment.appointmentId}">Rate Service</button>-->
+<!--              </th:block>-->
+<!--            </div>-->
+<!--          </div>-->
+<!--        </div>-->
+<!--      </div>-->
+<!--    </div>-->
+<!--    <div th:if="${appointments == null or appointments.?[date &lt; T(java.time.LocalDate).now() and status.name() != 'CANCELLED'].isEmpty()}" class="text-center py-12">-->
+<!--      <svg class="w-16 h-16 mx-auto mb-4 text-base-content/30" fill="none" stroke="currentColor" viewBox="0 0 24 24">-->
+
+<!--        &lt;!&ndash;                /////&ndash;&gt;-->
+
+<!--        &lt;!&ndash;              <th:block th:if="${appointment.status.name() == 'COMPLETED' and !${appointment.hasRating}}">&ndash;&gt;-->
+<!--        &lt;!&ndash;                <button class="btn btn-sm btn-outline btn-info rate-btn" th:attr="data-appointment-id=${appointment.appointmentId}">Rate Service</button>&ndash;&gt;-->
+<!--        &lt;!&ndash;              </th:block>&ndash;&gt;-->
+
+<!--        &lt;!&ndash;              <th:block th:if="${appointment.status.name() == 'COMPLETED' and ${appointment.hasRating}}">&ndash;&gt;-->
+<!--        &lt;!&ndash;                <span class="badge badge-success">✓ Rated</span>&ndash;&gt;-->
+<!--        &lt;!&ndash;              </th:block>&ndash;&gt;-->
+
+<!--        &lt;!&ndash;//////&ndash;&gt;-->
+<!--        &lt;!&ndash;            </div>&ndash;&gt;-->
+<!--        &lt;!&ndash;          </div>&ndash;&gt;-->
+<!--        &lt;!&ndash;        </div>&ndash;&gt;-->
+<!--        &lt;!&ndash;      </div>&ndash;&gt;-->
+<!--        &lt;!&ndash;    </div>&ndash;&gt;-->
+<!--        &lt;!&ndash;    <div th:if="${appointments == null or appointments.?[date &lt; T(java.time.LocalDate).now() and status.name() != 'CANCELLED'].isEmpty()}" class="text-center py-12">&ndash;&gt;-->
+<!--        &lt;!&ndash;      <svg class="w-16 h-16 mx-auto mb-4 text-base-content/30" fill="none" stroke="currentColor" viewBox="0 0 24 24">&ndash;&gt;-->
+
+<!--        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z"></path>-->
+<!--      </svg>-->
+<!--      <p class="text-lg text-base-content/50">No past appointments yet. Your glow journey is just beginning!</p>-->
+<!--    </div>-->
+<!--  </div>-->
+<!--</div>-->
+
+<!--&lt;!&ndash; Rating Modal &ndash;&gt;-->
+<!--<dialog id="rating-modal" class="modal">-->
+<!--  <div class="modal-box">-->
+<!--    <h3 class="font-bold text-lg">Rate Your Experience</h3>-->
+<!--    <form id="rating-form">-->
+<!--      <input type="hidden" id="appointment-id" name="appointmentId">-->
+<!--      <div class="form-control mb-4">-->
+<!--        <label class="label">-->
+<!--          <span class="label-text">Rating</span>-->
+<!--        </label>-->
+<!--        <div class="rating rating-lg">-->
+<!--          <input type="radio" name="rating" value="5" class="mask mask-star-2 bg-orange-400" />-->
+<!--          <input type="radio" name="rating" value="4" class="mask mask-star-2 bg-orange-400" />-->
+<!--          <input type="radio" name="rating" value="3" class="mask mask-star-2 bg-orange-400" />-->
+<!--          <input type="radio" name="rating" value="2" class="mask mask-star-2 bg-orange-400" />-->
+<!--          <input type="radio" name="rating" value="1" class="mask mask-star-2 bg-orange-400" />-->
+<!--        </div>-->
+<!--      </div>-->
+<!--      <div class="form-control mb-6">-->
+<!--        <label class="label">-->
+<!--          <span class="label-text">Comment (Optional)</span>-->
+<!--        </label>-->
+<!--        <textarea name="comment" class="textarea textarea-bordered" rows="3" placeholder="Share your thoughts..."></textarea>-->
+<!--      </div>-->
+<!--      <div class="modal-action">-->
+<!--        <button type="button" class="btn" onclick="document.getElementById('rating-modal').close()">Cancel</button>-->
+<!--        <button type="submit" class="btn btn-primary">Submit Rating</button>-->
+<!--      </div>-->
+<!--    </form>-->
+<!--  </div>-->
+
+<!--  <form method="dialog" class="modal-backdrop">-->
+<!--    <button>close</button>-->
+<!--  </form>-->
+<!--</dialog>-->
+
+<!--&lt;!&ndash; Footer &ndash;&gt;-->
+<!--<div th:replace="~{fragments/footer :: footer}"></div>-->
+
+<!--<script>-->
+<!--  function showRatingModal(appointmentId) {-->
+<!--    console.log('showRatingModal called with ID:', appointmentId);-->
+<!--    const modal = document.getElementById('rating-modal');-->
+<!--    const input = document.getElementById('appointment-id');-->
+<!--    if (modal && input) {-->
+<!--      input.value = appointmentId;-->
+<!--      modal.showModal();-->
+<!--      console.log('Modal opened successfully');-->
+<!--    } else {-->
+<!--      console.error('Modal or input not found!');-->
+<!--    }-->
+<!--  }-->
+
+
+<!--  function updateRatingStatus(appointmentId) {-->
+<!--    const section = document.getElementById(`rating-section-${appointmentId}`);-->
+<!--    if (section) {-->
+<!--      section.innerHTML = '<span class="badge badge-success">✓ Rated</span>';-->
+<!--    }-->
+<!--  }-->
+
+<!--  document.getElementById('rating-form').addEventListener('submit', async (e) => {-->
+<!--    e.preventDefault();-->
+<!--    const formData = new FormData(e.target);-->
+<!--    const ratingData = {-->
+<!--      appointmentId: parseInt(formData.get('appointmentId')),-->
+<!--      rating: parseInt(formData.get('rating')),-->
+<!--      comment: formData.get('comment') || ''-->
+<!--    };-->
+
+<!--    console.log('Submitting rating:', ratingData);-->
+
+<!--    try {-->
+<!--      const res = await fetch('/api/ratings', {-->
+<!--        method: 'POST',-->
+<!--        headers: { 'Content-Type': 'application/json' },-->
+<!--        body: JSON.stringify(ratingData),-->
+<!--        credentials: 'include'-->
+<!--      });-->
+
+<!--      console.log('Rating submission response status:', res.status);-->
+
+<!--      if (res.ok) {-->
+<!--        document.getElementById('rating-modal').close();-->
+<!--        alert('Thank you for your rating!');-->
+
+<!--        updateRatingStatus(ratingData.appointmentId);-->
+
+<!--        setTimeout(() => location.reload(), 1000);-->
+<!--      } else {-->
+<!--        const err = await res.json();-->
+<!--        console.error('Rating submission error:', err);-->
+<!--        alert(err.error || 'Failed to submit rating');-->
+<!--      }-->
+<!--    } catch (error) {-->
+<!--      console.error('Network error in rating submission:', error);-->
+<!--      alert('Network error: ' + error.message);-->
+<!--    }-->
+<!--  });-->
+
+
+<!--  document.addEventListener('DOMContentLoaded', function() {-->
+<!--    console.log('DOM loaded - adding event listeners to rate buttons');-->
+
+<!--    // Enhanced navbar logic to show "My Appointments" link for customers-->
+<!--    fetch("/api/auth/status")-->
+<!--            .then(response => response.json())-->
+<!--            .then(data => {-->
+<!--              if (data.loggedIn && data.role === 'customer') {-->
+<!--                // Insert My Appointments link in navbar menu-->
+<!--                const menu = document.querySelector('.menu-horizontal');-->
+<!--                if (menu && !menu.querySelector('a[href="/my-appointments"]')) {-->
+<!--                  const li = document.createElement('li');-->
+<!--                  li.innerHTML = '<a href="/my-appointments">My Appointments</a>';-->
+<!--                  menu.appendChild(li);-->
+<!--                }-->
+<!--              }-->
+<!--            })-->
+<!--            .catch(console.error);-->
+
+
+<!--    const rateButtons = document.querySelectorAll('.rate-btn');-->
+<!--    console.log('Found rate buttons:', rateButtons.length);-->
+<!--    rateButtons.forEach(button => {-->
+<!--      const appointmentId = button.dataset.appointmentId;-->
+<!--      console.log('Adding listener to button for ID:', appointmentId);-->
+<!--      button.addEventListener('click', (e) => {-->
+<!--        e.preventDefault();-->
+<!--        showRatingModal(appointmentId);-->
+<!--      });-->
+<!--    });-->
+<!--  });-->
+<!--</script>-->
+<!--</body>-->
+<!--</html>-->
+
+
+
+<!--/////-->
+
+
+<!--<!DOCTYPE html>-->
+<!--<html lang="en" data-theme="lofi" xmlns:th="http://www.thymeleaf.org">-->
+<!--<head>-->
+<!--  <meta charset="UTF-8">-->
+<!--  <title>My Appointments - The Glow Salon</title>-->
+<!--  <script src="https://cdn.tailwindcss.com"></script>-->
+<!--  <link href="https://cdn.jsdelivr.net/npm/daisyui@4.12.10/dist/full.min.css" rel="stylesheet" type="text/css" />-->
+<!--  <script src="https://unpkg.com/htmx.org@1.9.10"></script>-->
+<!--</head>-->
+<!--<body class="min-h-screen bg-base-200">-->
+<!--&lt;!&ndash; Navbar &ndash;&gt;-->
+<!--<div th:replace="~{fragments/navbar :: navbar}"></div>-->
+
+<!--&lt;!&ndash; Main Content &ndash;&gt;-->
+<!--<div class="container mx-auto px-4 py-8">-->
+<!--  <div class="text-center mb-8">-->
+<!--    <h1 class="text-4xl font-bold mb-4">My Appointments</h1>-->
+<!--    <p class="text-lg text-base-content/70">Welcome back, <span th:text="${user.firstName}">Customer</span>! Here's your appointment history.</p>-->
+<!--    <div th:if="${error}" class="alert alert-error mt-4">-->
+<!--      <span th:text="${error}">Error message</span>-->
+<!--    </div>-->
+<!--  </div>-->
+
+<!--  &lt;!&ndash; Upcoming Appointments &ndash;&gt;-->
+<!--  <div class="mb-12">-->
+<!--    <h2 class="text-2xl font-bold mb-6 flex items-center">-->
+<!--      <svg class="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">-->
+<!--        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>-->
+<!--      </svg>-->
+<!--      Upcoming Appointments-->
+<!--    </h2>-->
+<!--    <div th:if="${appointments != null and !appointments.?[date >= T(java.time.LocalDate).now() and status.name() != 'CANCELLED'].isEmpty()}" class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">-->
+<!--      <div th:each="appointment : ${appointments.?[date >= T(java.time.LocalDate).now() and status.name() != 'CANCELLED']}"-->
+<!--           class="card bg-base-100 shadow-xl">-->
+<!--        <div class="card-body">-->
+<!--          <h3 class="card-title" th:text="${appointment.date} + ' at ' + ${appointment.time}">Date & Time</h3>-->
+<!--          <p class="text-sm text-base-content/70">-->
+<!--            <strong>Stylist:</strong> <span th:text="${appointment.employee.firstName} + ' ' + ${appointment.employee.lastName}">Name</span><br>-->
+<!--            <strong>Location:</strong> <span th:text="${appointment.location.name}">Location</span><br>-->
+<!--            <strong>Status:</strong> <span th:text="${appointment.status}">Status</span>-->
+<!--          </p>-->
+<!--          <ul class="mt-4 space-y-1">-->
+<!--            <li th:each="service : ${appointment.services}" class="text-sm">-->
+<!--              <span th:text="${service.name}">Service</span> (<span th:text="${service.duration} + ' min, ' + ${service.price} + ' SEK'">Details</span>)-->
+<!--            </li>-->
+<!--          </ul>-->
+<!--          <div class="mt-4 flex justify-between items-center">-->
+<!--            <span class="font-bold text-primary" th:text="${appointment.totalPrice} + ' SEK'">Total</span>-->
+<!--            <div class="space-x-2">-->
+<!--              <a th:href="@{/confirmation(appointmentId=${appointment.appointmentId})}" class="btn btn-sm btn-primary">View Details</a>-->
+<!--              <th:block th:if="${appointment.status.name() == 'PENDING' or appointment.status.name() == 'CONFIRMED'}">-->
+<!--                <form th:action="@{/appointments/cancel(appointmentId=${appointment.appointmentId})}" method="post" style="display: inline;">-->
+<!--                  <button type="submit" class="btn btn-sm btn-error" onclick="return confirm('Are you sure you want to cancel this appointment? This action cannot be undone.')">-->
+<!--                    Cancel-->
+<!--                  </button>-->
+<!--                </form>-->
+<!--              </th:block>-->
+
+<!--&lt;!&ndash;              <th:block th:if="${appointment.status.name() == 'COMPLETED' and appointment.date &lt;= T(java.time.LocalDate).now()}">&ndash;&gt;-->
+<!--&lt;!&ndash;                <button class="btn btn-sm btn-outline btn-info rate-btn" th:attr="data-appointment-id=${appointment.appointmentId}">Rate Service</button>&ndash;&gt;-->
+<!--&lt;!&ndash;              </th:block>&ndash;&gt;-->
+
+<!--                            <th:block th:if="${appointment.status.name() == 'COMPLETED' and appointment.date &lt;= T(java.time.LocalDate).now()}">-->
+<!--                              <button class="btn btn-sm btn-outline btn-info rate-btn" th:attr="data-appointment-id=${appointment.appointmentId}">Rate Service</button>-->
+<!--                            </th:block>-->
+
+<!--            </div>-->
+<!--          </div>-->
+<!--        </div>-->
+<!--      </div>-->
+<!--    </div>-->
+<!--    <div th:if="${appointments == null or appointments.?[date >= T(java.time.LocalDate).now() and status.name() != 'CANCELLED'].isEmpty()}" class="text-center py-12">-->
+<!--      <svg class="w-16 h-16 mx-auto mb-4 text-base-content/30" fill="none" stroke="currentColor" viewBox="0 0 24 24">-->
+<!--        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>-->
+<!--      </svg>-->
+<!--      <p class="text-lg text-base-content/50">No upcoming appointments. <a th:href="@{/salon/services}" class="link link-primary">Book now!</a></p>-->
+<!--    </div>-->
+<!--  </div>-->
+
+<!--  &lt;!&ndash; Past Appointments &ndash;&gt;-->
+<!--  <div>-->
+<!--    <h2 class="text-2xl font-bold mb-6 flex items-center">-->
+<!--      <svg class="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">-->
+<!--        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>-->
+<!--      </svg>-->
+<!--      Past Appointments-->
+<!--    </h2>-->
+<!--    <div th:if="${appointments != null and !appointments.?[date &lt; T(java.time.LocalDate).now() and status.name() != 'CANCELLED'].isEmpty()}" class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">-->
+<!--      <div th:each="appointment : ${appointments.?[date &lt; T(java.time.LocalDate).now() and status.name() != 'CANCELLED']}"-->
+<!--           class="card bg-base-100 shadow-xl">-->
+<!--        <div class="card-body">-->
+<!--          <h3 class="card-title" th:text="${appointment.date} + ' at ' + ${appointment.time}">Date & Time</h3>-->
+<!--          <p class="text-sm text-base-content/70">-->
+<!--            <strong>Stylist:</strong> <span th:text="${appointment.employee.firstName} + ' ' + ${appointment.employee.lastName}">Name</span><br>-->
+<!--            <strong>Location:</strong> <span th:text="${appointment.location.name}">Location</span><br>-->
+<!--            <strong>Status:</strong> <span th:text="${appointment.status}">Status</span>-->
+<!--          </p>-->
+<!--          <ul class="mt-4 space-y-1">-->
+<!--            <li th:each="service : ${appointment.services}" class="text-sm">-->
+<!--              <span th:text="${service.name}">Service</span> (<span th:text="${service.duration} + ' min, ' + ${service.price} + ' SEK'">Details</span>)-->
+<!--            </li>-->
+<!--          </ul>-->
+<!--          <div class="mt-4 flex justify-between items-center">-->
+<!--            <span class="font-bold text-primary" th:text="${appointment.totalPrice} + ' SEK'">Total</span>-->
+<!--            <div class="space-x-2">-->
+<!--              <a th:href="@{/confirmation(appointmentId=${appointment.appointmentId})}" class="btn btn-sm btn-outline">View Details</a>-->
+<!--              <th:block th:if="${appointment.status.name() == 'PENDING' or appointment.status.name() == 'CONFIRMED'}">-->
+<!--                <form th:action="@{/appointments/cancel(appointmentId=${appointment.appointmentId})}" method="post" style="display: inline;">-->
+<!--                  <button type="submit" class="btn btn-sm btn-error" onclick="return confirm('Are you sure you want to cancel this appointment? This action cannot be undone.')">-->
+<!--                    Cancel-->
+<!--                  </button>-->
+<!--                </form>-->
+<!--              </th:block>-->
+
+<!--&lt;!&ndash;              <th:block th:if="${appointment.status.name() == 'COMPLETED' and appointment.date &lt;= T(java.time.LocalDate).now()}">&ndash;&gt;-->
+<!--&lt;!&ndash;                <button class="btn btn-sm btn-outline btn-info rate-btn" th:attr="data-appointment-id=${appointment.appointmentId}">Rate Service</button>&ndash;&gt;-->
+<!--&lt;!&ndash;              </th:block>&ndash;&gt;-->
+
+<!--              <th:block th:if="${appointment.status.name() == 'COMPLETED' and appointment.date &lt;= T(java.time.LocalDate).now()}">-->
+<!--                <div id="rating-section-${appointment.appointmentId}" class="space-x-2">-->
+<!--                  <button class="btn btn-sm btn-outline btn-info rate-btn" th:attr="data-appointment-id=${appointment.appointmentId}">Rate Service</button>-->
+<!--                </div>-->
+<!--              </th:block>-->
+
+<!--            </div>-->
+<!--          </div>-->
+<!--        </div>-->
+<!--      </div>-->
+<!--    </div>-->
+<!--    <div th:if="${appointments == null or appointments.?[date &lt; T(java.time.LocalDate).now() and status.name() != 'CANCELLED'].isEmpty()}" class="text-center py-12">-->
+<!--      <svg class="w-16 h-16 mx-auto mb-4 text-base-content/30" fill="none" stroke="currentColor" viewBox="0 0 24 24">-->
+<!--        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z"></path>-->
+<!--      </svg>-->
+<!--      <p class="text-lg text-base-content/50">No past appointments yet. Your glow journey is just beginning!</p>-->
+<!--    </div>-->
+<!--  </div>-->
+<!--</div>-->
+
+<!--&lt;!&ndash; Rating Modal &ndash;&gt;-->
+<!--<dialog id="rating-modal" class="modal">-->
+<!--  <div class="modal-box">-->
+<!--    <h3 class="font-bold text-lg">Rate Your Experience</h3>-->
+<!--    <form id="rating-form">-->
+<!--      <input type="hidden" id="appointment-id" name="appointmentId">-->
+<!--      <div class="form-control mb-4">-->
+<!--        <label class="label">-->
+<!--          <span class="label-text">Rating</span>-->
+<!--        </label>-->
+<!--        <div class="rating rating-lg">-->
+<!--          <input type="radio" name="rating" value="5" class="mask mask-star-2 bg-orange-400" />-->
+<!--          <input type="radio" name="rating" value="4" class="mask mask-star-2 bg-orange-400" />-->
+<!--          <input type="radio" name="rating" value="3" class="mask mask-star-2 bg-orange-400" />-->
+<!--          <input type="radio" name="rating" value="2" class="mask mask-star-2 bg-orange-400" />-->
+<!--          <input type="radio" name="rating" value="1" class="mask mask-star-2 bg-orange-400" />-->
+<!--        </div>-->
+<!--      </div>-->
+<!--      <div class="form-control mb-6">-->
+<!--        <label class="label">-->
+<!--          <span class="label-text">Comment (Optional)</span>-->
+<!--        </label>-->
+<!--        <textarea name="comment" class="textarea textarea-bordered" rows="3" placeholder="Share your thoughts..."></textarea>-->
+<!--      </div>-->
+<!--      <div class="modal-action">-->
+<!--        <button type="button" class="btn" onclick="document.getElementById('rating-modal').close()">Cancel</button>-->
+<!--        <button type="submit" class="btn btn-primary">Submit Rating</button>-->
+<!--      </div>-->
+<!--    </form>-->
+<!--  </div>-->
+<!--  <form method="dialog" class="modal-backdrop">-->
+<!--    <button>close</button>-->
+<!--  </form>-->
+<!--</dialog>-->
+
+<!--&lt;!&ndash; Footer &ndash;&gt;-->
+<!--<div th:replace="~{fragments/footer :: footer}"></div>-->
+
+<!--<script>-->
+<!--  function showRatingModal(appointmentId) {-->
+<!--    console.log('showRatingModal called with ID:', appointmentId);-->
+<!--    const modal = document.getElementById('rating-modal');-->
+<!--    const input = document.getElementById('appointment-id');-->
+<!--    if (modal && input) {-->
+<!--      input.value = appointmentId;-->
+<!--      modal.showModal();-->
+<!--      console.log('Modal opened successfully');-->
+<!--    } else {-->
+<!--      console.error('Modal or input not found!');-->
+<!--    }-->
+<!--  }-->
+
+<!--  function updateRatingStatus(appointmentId) {-->
+<!--    console.log('Updating rating status for ID:', appointmentId);-->
+
+<!--    const button = document.querySelector(`[data-appointment-id="${appointmentId}"]`);-->
+<!--    if (button) {-->
+<!--      button.innerHTML = '<span class="badge badge-success">✓ Rated</span>';-->
+<!--      button.disabled = true;-->
+<!--      button.classList.remove('btn-outline', 'btn-info');-->
+<!--      button.classList.add('btn-disabled');-->
+<!--    } else {-->
+
+<!--      const section = document.querySelector(`#rating-section-${appointmentId}`);-->
+<!--      if (section) {-->
+<!--        section.innerHTML = '<span class="badge badge-success">✓ Rated</span>';-->
+<!--      }-->
+<!--    }-->
+<!--  }-->
+
+<!--  document.getElementById('rating-form').addEventListener('submit', async (e) => {-->
+<!--    e.preventDefault();-->
+<!--    const formData = new FormData(e.target);-->
+<!--    const ratingData = {-->
+<!--      appointmentId: parseInt(formData.get('appointmentId')),-->
+<!--      rating: parseInt(formData.get('rating')),-->
+<!--      comment: formData.get('comment') || ''-->
+<!--    };-->
+
+<!--    console.log('Submitting rating:', ratingData);-->
+
+<!--    try {-->
+<!--      const res = await fetch('/api/ratings', {-->
+<!--        method: 'POST',-->
+<!--        headers: { 'Content-Type': 'application/json' },-->
+<!--        body: JSON.stringify(ratingData),-->
+<!--        credentials: 'include'-->
+<!--      });-->
+
+<!--      console.log('Rating submission response status:', res.status);-->
+
+<!--      if (res.ok) {-->
+<!--        document.getElementById('rating-modal').close();-->
+<!--        alert('Thank you for your rating!');-->
+
+<!--        updateRatingStatus(ratingData.appointmentId);-->
+
+<!--        setTimeout(() => location.reload(), 1000);-->
+<!--      } else {-->
+<!--        const err = await res.json();-->
+<!--        console.error('Rating submission error:', err);-->
+<!--        alert(err.error || 'Failed to submit rating');-->
+<!--      }-->
+<!--    } catch (error) {-->
+<!--      console.error('Network error in rating submission:', error);-->
+<!--      alert('Network error: ' + error.message);-->
+<!--    }-->
+<!--  });-->
+
+<!--  document.addEventListener('DOMContentLoaded', function() {-->
+<!--    console.log('DOM loaded - adding event listeners to rate buttons');-->
+
+<!--    // Enhanced navbar logic to show "My Appointments" link for customers-->
+<!--    fetch("/api/auth/status")-->
+<!--            .then(response => response.json())-->
+<!--            .then(data => {-->
+<!--              if (data.loggedIn && data.role === 'customer') {-->
+<!--                // Insert My Appointments link in navbar menu-->
+<!--                const menu = document.querySelector('.menu-horizontal');-->
+<!--                if (menu && !menu.querySelector('a[href="/my-appointments"]')) {-->
+<!--                  const li = document.createElement('li');-->
+<!--                  li.innerHTML = '<a href="/my-appointments">My Appointments</a>';-->
+<!--                  menu.appendChild(li);-->
+<!--                }-->
+<!--              }-->
+<!--            })-->
+<!--            .catch(console.error);-->
+
+<!--    const rateButtons = document.querySelectorAll('.rate-btn');-->
+<!--    console.log('Found rate buttons:', rateButtons.length);-->
+<!--    rateButtons.forEach(button => {-->
+<!--      const appointmentId = button.dataset.appointmentId;-->
+<!--      console.log('Adding listener to button for ID:', appointmentId);-->
+<!--      button.addEventListener('click', (e) => {-->
+<!--        e.preventDefault();-->
+<!--        showRatingModal(appointmentId);-->
+<!--      });-->
+<!--    });-->
+<!--  });-->
+<!--</script>-->
+<!--</body>-->
+<!--</html>-->
+
+                        <!--/////-->
+
 <!DOCTYPE html>
 <html lang="en" data-theme="lofi" xmlns:th="http://www.thymeleaf.org">
 <head>
@@ -10,6 +734,7 @@
 <body class="min-h-screen bg-base-200">
 <!-- Navbar -->
 <div th:replace="~{fragments/navbar :: navbar}"></div>
+
 <!-- Main Content -->
 <div class="container mx-auto px-4 py-8">
   <div class="text-center mb-8">
@@ -19,6 +744,7 @@
       <span th:text="${error}">Error message</span>
     </div>
   </div>
+
   <!-- Upcoming Appointments -->
   <div class="mb-12">
     <h2 class="text-2xl font-bold mb-6 flex items-center">
@@ -53,6 +779,17 @@
                   </button>
                 </form>
               </th:block>
+
+<!--              <th:block th:if="${appointment.status.name() == 'COMPLETED' and appointment.date &lt;= T(java.time.LocalDate).now()}">-->
+<!--                <div id="rating-section-${appointment.appointmentId}" class="space-x-2">-->
+<!--                  <button class="btn btn-sm btn-outline btn-info rate-btn" th:attr="data-appointment-id=${appointment.appointmentId}">Rate Service</button>-->
+<!--                </div>-->
+<!--              </th:block>-->
+
+                            <th:block th:if="${appointment.status.name() == 'COMPLETED' and appointment.date &lt;= T(java.time.LocalDate).now()}">
+                              <button class="btn btn-sm btn-outline btn-info rate-btn" th:attr="data-appointment-id=${appointment.appointmentId}">Rate Service</button>
+                            </th:block>
+
             </div>
           </div>
         </div>
@@ -65,6 +802,7 @@
       <p class="text-lg text-base-content/50">No upcoming appointments. <a th:href="@{/salon/services}" class="link link-primary">Book now!</a></p>
     </div>
   </div>
+
   <!-- Past Appointments -->
   <div>
     <h2 class="text-2xl font-bold mb-6 flex items-center">
@@ -99,6 +837,13 @@
                   </button>
                 </form>
               </th:block>
+
+              <th:block th:if="${appointment.status.name() == 'COMPLETED' and appointment.date &lt;= T(java.time.LocalDate).now()}">
+                <div id="rating-section-${appointment.appointmentId}" class="space-x-2">
+                  <button class="btn btn-sm btn-outline btn-info rate-btn" th:attr="data-appointment-id=${appointment.appointmentId}">Rate Service</button>
+                </div>
+              </th:block>
+
             </div>
           </div>
         </div>
@@ -112,10 +857,134 @@
     </div>
   </div>
 </div>
+
+<!-- Rating Modal -->
+<dialog id="rating-modal" class="modal">
+  <div class="modal-box">
+    <h3 class="font-bold text-lg">Rate Your Experience</h3>
+    <form id="rating-form">
+      <input type="hidden" id="appointment-id" name="appointmentId">
+      <div class="form-control mb-4">
+        <label class="label">
+          <span class="label-text">Rating</span>
+        </label>
+        <div class="rating rating-lg">
+          <input type="radio" name="rating" value="5" class="mask mask-star-2 bg-orange-400" />
+          <input type="radio" name="rating" value="4" class="mask mask-star-2 bg-orange-400" />
+          <input type="radio" name="rating" value="3" class="mask mask-star-2 bg-orange-400" />
+          <input type="radio" name="rating" value="2" class="mask mask-star-2 bg-orange-400" />
+          <input type="radio" name="rating" value="1" class="mask mask-star-2 bg-orange-400" />
+        </div>
+      </div>
+      <div class="form-control mb-6">
+        <label class="label">
+          <span class="label-text">Comment (Optional)</span>
+        </label>
+        <textarea name="comment" class="textarea textarea-bordered" rows="3" placeholder="Share your thoughts..."></textarea>
+      </div>
+      <div class="modal-action">
+        <button type="button" class="btn" onclick="document.getElementById('rating-modal').close()">Cancel</button>
+        <button type="submit" class="btn btn-primary">Submit Rating</button>
+      </div>
+    </form>
+  </div>
+  <form method="dialog" class="modal-backdrop">
+    <button>close</button>
+  </form>
+</dialog>
+
 <!-- Footer -->
 <div th:replace="~{fragments/footer :: footer}"></div>
+
 <script>
+  function showRatingModal(appointmentId) {
+    console.log('showRatingModal called with ID:', appointmentId);
+    const modal = document.getElementById('rating-modal');
+    const input = document.getElementById('appointment-id');
+    if (modal && input) {
+      input.value = appointmentId;
+      modal.showModal();
+      console.log('Modal opened successfully');
+    } else {
+      console.error('Modal or input not found!');
+    }
+  }
+
+  function updateRatingStatus(appointmentId) {
+    console.log('Updating rating status for ID:', appointmentId);
+
+    const button = document.querySelector(`[data-appointment-id="${appointmentId}"]`);
+    if (button) {
+      button.innerHTML = '<span class="badge badge-success">✓ Rated</span>';
+      button.disabled = true;
+      button.classList.remove('btn-outline', 'btn-info');
+      button.classList.add('btn-disabled');
+    } else {
+      const section = document.querySelector(`#rating-section-${appointmentId}`);
+      if (section) {
+        section.innerHTML = '<span class="badge badge-success">✓ Rated</span>';
+      }
+    }
+  }
+
+  // New function to check if appointment is already rated on page load
+  async function checkRatingStatus(appointmentId) {
+    try {
+      const response = await fetch(`/api/ratings/appointment/${appointmentId}/exists`, {
+        credentials: 'include'
+      });
+      const data = await response.json();
+      if (data.rated) {
+        updateRatingStatus(appointmentId);
+      }
+    } catch (error) {
+      console.error('Error checking rating status for appointment', appointmentId, error);
+    }
+  }
+
+  document.getElementById('rating-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const formData = new FormData(e.target);
+    const ratingData = {
+      appointmentId: parseInt(formData.get('appointmentId')),
+      rating: parseInt(formData.get('rating')),
+      comment: formData.get('comment') || ''
+    };
+
+    console.log('Submitting rating:', ratingData);
+
+    try {
+      const res = await fetch('/api/ratings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(ratingData),
+        credentials: 'include'
+      });
+
+      console.log('Rating submission response status:', res.status);
+
+      if (res.ok) {
+        document.getElementById('rating-modal').close();
+        alert('Thank you for your rating!');
+
+        // Update UI immediately without reload
+        updateRatingStatus(ratingData.appointmentId);
+
+        // Optional: No reload needed now, as UI is updated
+      } else {
+        const err = await res.json();
+        console.error('Rating submission error:', err);
+        alert(err.error || 'Failed to submit rating');
+      }
+    } catch (error) {
+      console.error('Network error in rating submission:', error);
+      alert('Network error: ' + error.message);
+    }
+  });
+
   document.addEventListener('DOMContentLoaded', function() {
+    console.log('DOM loaded - adding event listeners to rate buttons');
+
     // Enhanced navbar logic to show "My Appointments" link for customers
     fetch("/api/auth/status")
             .then(response => response.json())
@@ -131,6 +1000,22 @@
               }
             })
             .catch(console.error);
+
+    const rateButtons = document.querySelectorAll('.rate-btn');
+    console.log('Found rate buttons:', rateButtons.length);
+
+    // Add click listeners
+    rateButtons.forEach(button => {
+      const appointmentId = button.dataset.appointmentId;
+      console.log('Adding listener to button for ID:', appointmentId);
+      button.addEventListener('click', (e) => {
+        e.preventDefault();
+        showRatingModal(appointmentId);
+      });
+
+      // Check initial rating status for each button
+      checkRatingStatus(appointmentId);
+    });
   });
 </script>
 </body>

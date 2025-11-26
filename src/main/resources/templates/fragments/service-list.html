@@ -39,6 +39,96 @@
     </form>
 </div>
 
+<!--<div th:fragment="booking-form">-->
+<!--    <section class="py-12 px-4">-->
+<!--        <div class="card bg-base-100 shadow-xl max-w-4xl mx-auto">-->
+<!--            <div class="card-body p-8">-->
+<!--                <h2 class="text-3xl text-center mb-6 font-bold text-primary">Complete Your Booking</h2>-->
+
+<!--                <form id="final-booking-form">-->
+
+<!--                    &lt;!&ndash; ADD: Selected Services Summary &ndash;&gt;-->
+<!--                    <div class="form-control mb-6 bg-base-200 p-4 rounded-lg">-->
+<!--                        <label class="label">-->
+<!--                            <span class="label-text font-semibold">Selected Services</span>-->
+<!--                        </label>-->
+<!--                        <div id="selected-services-summary" class="space-y-2">-->
+<!--                            <p class="text-gray-500">No services selected</p>-->
+<!--                        </div>-->
+<!--                    </div>-->
+
+<!--                    &lt;!&ndash; location&ndash;&gt;-->
+<!--                    <div class="form-control mb-6">-->
+<!--                        <label class="label">-->
+<!--                            <span class="label-text">Select Location</span>-->
+<!--                        </label>-->
+<!--                        <select id="location-select" name="locationId" class="select select-bordered w-full" required>-->
+<!--                            <option value="">Select Location</option>-->
+<!--                            <th:block th:each="loc : ${locations}">-->
+<!--                                <option th:value="${loc.locationId}" th:text="${loc.name}"></option>-->
+<!--                            </th:block>-->
+<!--                        </select>-->
+<!--                    </div>-->
+
+<!--                    &lt;!&ndash; Date &ndash;&gt;-->
+<!--                    <div class="form-control mb-6">-->
+<!--                        <label class="label">-->
+<!--              <span class="label-text flex items-center">-->
+<!--                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">-->
+<!--                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>-->
+<!--                </svg>-->
+<!--                Select Date-->
+<!--              </span>-->
+<!--                        </label>-->
+<!--                        <input type="date" name="date" id="date-input" class="input input-bordered w-full" required>-->
+<!--                    </div>-->
+
+<!--                    &lt;!&ndash; Time Selection &ndash;&gt;-->
+<!--                    <div class="form-control mb-8">-->
+<!--                        <label class="label">-->
+<!--              <span class="label-text flex items-center">-->
+<!--                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">-->
+<!--                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>-->
+<!--                </svg>-->
+<!--                Select Time-->
+<!--              </span>-->
+<!--                        </label>-->
+<!--                        <div id="time-grid" class="grid grid-cols-4 md:grid-cols-6 gap-2 bg-base-200 p-4 rounded-lg border border-base-300 max-h-48 overflow-y-auto"></div>-->
+<!--                        <input type="hidden" name="time" id="selected-time" value="">-->
+<!--                        <div id="selected-time-display" class="mt-2 text-center font-medium text-primary"></div>-->
+<!--                    </div>-->
+
+<!--                    &lt;!&ndash; stylist&ndash;&gt;-->
+<!--                    <div class="form-control mb-6">-->
+<!--                        <label class="label">-->
+<!--              <span class="label-text flex items-center">-->
+<!--                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">-->
+<!--                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>-->
+<!--                </svg>-->
+<!--                Available Stylists-->
+<!--              </span>-->
+<!--                        </label>-->
+<!--                        <select name="employeeId" id="stylist-select" class="select select-bordered w-full" required>-->
+<!--                            <option value="">Select date and time first</option>-->
+<!--                        </select>-->
+<!--                    </div>-->
+
+<!--                    <div class="form-control">-->
+<!--                        <button type="submit" class="btn btn-primary w-full rounded-full shadow-lg hover:shadow-xl transition-shadow" disabled id="submit-btn">-->
+<!--                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">-->
+<!--                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>-->
+<!--                            </svg>-->
+<!--                            Book Appointment-->
+<!--                        </button>-->
+<!--                    </div>-->
+<!--                </form>-->
+
+<!--                <div id="response" class="mt-6"></div>-->
+<!--            </div>-->
+<!--        </div>-->
+<!--    </section>-->
+<!--</div>-->
+
 <div th:fragment="booking-form">
     <section class="py-12 px-4">
         <div class="card bg-base-100 shadow-xl max-w-4xl mx-auto">
@@ -98,7 +188,7 @@
                         <div id="selected-time-display" class="mt-2 text-center font-medium text-primary"></div>
                     </div>
 
-                    <!-- stylist-->
+                    <!-- stylist cards -->
                     <div class="form-control mb-6">
                         <label class="label">
               <span class="label-text flex items-center">
@@ -108,9 +198,11 @@
                 Available Stylists
               </span>
                         </label>
-                        <select name="employeeId" id="stylist-select" class="select select-bordered w-full" required>
-                            <option value="">Select date and time first</option>
-                        </select>
+                        <div id="stylist-cards" class="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-64 overflow-y-auto bg-base-200 p-4 rounded-lg border border-base-300">
+                            <p class="text-center text-gray-500 col-span-full">Select date, time, and location to see available stylists.</p>
+                        </div>
+                        <input type="hidden" name="employeeId" id="selected-employee" value="">
+                        <div id="selected-stylist-display" class="mt-2 text-center font-medium text-primary"></div>
                     </div>
 
                     <div class="form-control">
