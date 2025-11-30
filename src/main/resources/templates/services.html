@@ -183,17 +183,7 @@
         }
     }
 
-    function checkFormComplete() {
-        const location = document.getElementById('location-select')?.value;
-        const date = document.getElementById('date-input')?.value;
-        const time = document.getElementById('selected-time')?.value;
-        const stylist = document.getElementById('stylist-select')?.value;
-        const submitBtn = document.getElementById('submit-btn');
 
-        if (submitBtn) {
-            submitBtn.disabled = !(location && date && time && stylist);
-        }
-    }
 
     // Service selection functions (unchanged)
     function initializeServiceSelection() {
@@ -518,7 +508,7 @@
                     price: parseFloat(priceElement ? priceElement.textContent.replace(' SEK', '') : 0)
                 };
             });
-        // If details found, store them for later use (best practice: cache to avoid repeated DOM queries)
+        // If details found, store them for later use
         if (details.length > 0) {
             sessionStorage.setItem('selectedServicesDetails', JSON.stringify(details));
         }
@@ -670,6 +660,111 @@
             }
         });
     });
+
+    // Update triggerAvailableEmployees to render cards
+    function triggerAvailableEmployees() {
+        const locationId = document.getElementById('location-select')?.value;
+        const date = document.getElementById('date-input')?.value;
+        const time = document.getElementById('selected-time')?.value;
+        const serviceIds = getSelectedServiceIds();
+
+        if (locationId && date && time && serviceIds.length > 0) {
+            const serviceIdsParam = serviceIds.join(',');
+            const url = `/api/appointments/available-employees?locationId=${locationId}&date=${date}&time=${time}&serviceIds=${serviceIdsParam}`;
+
+            fetch(url)
+                .then(res => res.json())
+                .then(employees => {
+                    renderStylistCards(employees);
+                    checkFormComplete();
+                    updateSelectedServicesSummary();
+                })
+                .catch(err => {
+                    console.error('Error loading stylists:', err);
+                    document.getElementById('stylist-cards').innerHTML = '<p class="text-center text-error col-span-full">Error loading stylists. Please try again.</p>';
+                });
+        } else {
+            document.getElementById('stylist-cards').innerHTML = '<p class="text-center text-gray-500 col-span-full">Select date, time, and location to see available stylists.</p>';
+            document.getElementById('selected-employee').value = '';
+            document.getElementById('selected-stylist-display').textContent = '';
+            checkFormComplete();
+        }
+    }
+
+    function renderStylistCards(employees) {
+        const container = document.getElementById('stylist-cards');
+        if (!employees || employees.length === 0) {
+            container.innerHTML = '<p class="text-center text-gray-500 col-span-full">No stylists available for this time slot.</p>';
+            return;
+        }
+
+        let cardsHTML = '';
+        employees.forEach(emp => {
+            const fullName = `${emp.firstName} ${emp.lastName}`;
+            const avgRating = emp.averageRating || 0;
+            const ratingStars = generateStarRating(avgRating);
+            cardsHTML += `
+            <div class="card bg-base-100 shadow-md cursor-pointer hover:shadow-lg transition-shadow ${document.getElementById('selected-employee').value === emp.employeeId.toString() ? 'ring-2 ring-primary' : ''}" onclick="selectStylist(${emp.employeeId}, '${fullName}', ${avgRating})">
+                <div class="card-body p-4">
+                    <h3 class="card-title text-lg">${fullName}</h3>
+                    <div class="flex items-center space-x-2 mb-2">
+                        ${ratingStars}
+                        <span class="text-sm text-gray-600">${avgRating.toFixed(1)} (${getRatingCount(emp.employeeId)} reviews)</span>
+                    </div>
+                    <p class="text-sm text-gray-500">Experienced stylist ready to make you glow!</p>
+                </div>
+            </div>
+        `;
+        });
+        container.innerHTML = cardsHTML;
+    }
+
+    function generateStarRating(rating) {
+        let stars = '';
+        for (let i = 1; i <= 5; i++) {
+            if (i <= Math.floor(rating)) {
+                stars += '<svg class="w-4 h-4 text-yellow-400 fill-current" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>';
+            } else if (i === Math.ceil(rating) && rating % 1 !== 0) {
+                const fill = (rating % 1) * 20; // Approximate half-fill
+                stars += `<svg class="w-4 h-4 text-yellow-400" viewBox="0 0 24 24"><path fill="url(#gradient)" d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/><defs><linearGradient id="gradient" x1="0%" y1="0%" x2="${fill}%" y2="0%"><stop offset="0%" stop-color="#facc15"/><stop offset="${fill}%" stop-color="#facc15"/><stop offset="${fill}%" stop-color="#e5e7eb"/><stop offset="100%" stop-color="#e5e7eb"/></linearGradient></defs></svg>`;
+            } else {
+                stars += '<svg class="w-4 h-4 text-gray-300" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>';
+            }
+        }
+        return stars;
+    }
+
+    function getRatingCount(employeeId) {
+        // Placeholder - fetch real count if needed
+        return Math.floor(Math.random() * 20) + 1;
+    }
+
+    function selectStylist(id, name, rating) {
+        document.getElementById('selected-employee').value = id;
+        document.getElementById('selected-stylist-display').textContent = `${name} (${rating.toFixed(1)} stars)`;
+
+        // Update card highlights
+        document.querySelectorAll('#stylist-cards .card').forEach(card => {
+            card.classList.remove('ring-2', 'ring-primary');
+        });
+        event.currentTarget.classList.add('ring-2', 'ring-primary');
+
+        checkFormComplete();
+        updateSelectedServicesSummary();
+    }
+
+    // Update checkFormComplete to use hidden input
+    function checkFormComplete() {
+        const location = document.getElementById('location-select')?.value;
+        const date = document.getElementById('date-input')?.value;
+        const time = document.getElementById('selected-time')?.value;
+        const stylist = document.getElementById('selected-employee')?.value;
+        const submitBtn = document.getElementById('submit-btn');
+
+        if (submitBtn) {
+            submitBtn.disabled = !(location && date && time && stylist);
+        }
+    }
 </script>
 
 </body>

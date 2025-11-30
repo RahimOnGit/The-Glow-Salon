@@ -1,6 +1,7 @@
 package com.example.hairsalon.controller;
 
 import com.example.hairsalon.dto.BookingRequest;
+import com.example.hairsalon.dto.EmployeeAvailableDTO;
 import com.example.hairsalon.entity.Employee;
 import com.example.hairsalon.service.*;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -39,6 +40,9 @@ public class AppointmentController {
 
     @Autowired
     private ServiceService serviceService;
+
+    @Autowired
+    private RatingService ratingService;
 
     @PostMapping("/book")
     public ResponseEntity<Map<String, Object>> bookAppointment(@Valid @RequestBody BookingRequest request, Authentication auth) {
@@ -83,7 +87,7 @@ public class AppointmentController {
 
 
     @GetMapping("/available-employees")
-    public ResponseEntity<List<Employee>> getAvailableEmployees(
+    public ResponseEntity<List<EmployeeAvailableDTO>> getAvailableEmployees(
             @RequestParam Long locationId,
             @RequestParam LocalDate date,
             @RequestParam LocalTime time,
@@ -110,15 +114,21 @@ public class AppointmentController {
                 .filter(employee -> !employeeService.isStylistBlockedOnDate(employee, date, time, totalDuration))
                 .collect(Collectors.toList());
 
-        return ResponseEntity.ok(available);
+        List<EmployeeAvailableDTO> dtos = available.stream()
+                .map(emp -> new EmployeeAvailableDTO(
+                        emp.getEmployeeId(),
+                        emp.getFirstName(),
+                        emp.getLastName(),
+                        ratingService.getAverageRating(emp)
+                ))
+                .collect(Collectors.toList());
+
+        return ResponseEntity.ok(dtos);
     }
 
     @GetMapping("/locations")
     public ResponseEntity<?> getLocations() {
         return ResponseEntity.ok(locationService.getAllLocations());
     }
-
-
-
 
 }

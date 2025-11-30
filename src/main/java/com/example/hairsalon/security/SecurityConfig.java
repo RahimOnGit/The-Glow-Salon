@@ -68,7 +68,7 @@ public class SecurityConfig {
 
                         // === PUBLIC PAGES ===
                         .requestMatchers("/", "/home", "/index", "/login", "/register", "/logout").permitAll()
-                        .requestMatchers("/salon/**", "/services/**", "/service-view/**", "/booking-fragment", "/employee/**").permitAll()
+                        .requestMatchers("/salon/**", "/services/**", "/service-view/**", "/booking-fragment", "/employee/**" , "/contact").permitAll()
 
                         // === FRAGMENTS (GET & POST) ===
                         .requestMatchers(HttpMethod.GET, "/service-list-fragment", "/booking-form-fragment").permitAll()

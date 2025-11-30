@@ -3,6 +3,8 @@
 <head>
 
 
+
+
     <meta charset="UTF-8">
     <title>The Glow Salon</title>
     <!-- htmx and json-enc extension for sending form data as JSON -->
@@ -10,9 +12,13 @@
     <script src="https://unpkg.com/htmx.org/dist/ext/json-enc.js"></script>
 
 
+
+
     <!-- Tailwind CSS + DaisyUI CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdn.jsdelivr.net/npm/daisyui@4.12.10/dist/full.min.css" rel="stylesheet" type="text/css" />
+
+
 
 
     <style>
@@ -20,6 +26,8 @@
             0%   { transform: translateX(0%); }
             100% { transform: translateX(-50%); }
         }
+
+
 
 
         .animate-marquee {
@@ -36,15 +44,22 @@
 </head>
 <body class="min-h-screen bg-base-200">
 <!--navbar-->
-<div th:replace="fragments/navbar::navbar"></div>
+<div class="absolute top-0 left-0 z-20 right-0 shadow-none border-none">
+    <div th:replace="fragments/navbar::navbar"></div>
+
+
+</div>
+
+
 
 
 <!--hero section-->
 <div class="hero min-h-screen bg-cover bg-center" style="background-image: url('/images/the-glow-salon.jpg');">
-    <div class="hero-overlay bg-black/50"></div>
+    <div class="hero-overlay bg-black/60"></div>
     <div class="hero-content text-center text-neutral-content">
-        <div class="max-w-md">
-            <h1 class="mb-5 text-6xl font-bold">We make you glow in every cut</h1>
+        <div class="mx-auto">
+            <h1 class="text-7xl font-bold">We make you glow </h1>
+            <h1 class=" mb-5 font-bold text-7xl ">in every cut</h1>
             <p class="mb-10 text-xl">Professional stylists. Modern looks.</p>
             <a href="/salon/services" class="btn btn-wide rounded border-2 text-primary-content btn-lg  text-2xl bg-opacity-10">Book Now</a>
         </div>
@@ -52,16 +67,24 @@
 </div>
 
 
+
+
 <!--services section-->
 <div id="services " >
+
+
 
 
     <div th:replace="fragments/service-list::serviceOverviewFragment"></div>
 </div>
 
 
+
+
 <!--footer-->
 <div th:replace="fragments/footer::footer"></div>
+
+
 
 
 </body>
