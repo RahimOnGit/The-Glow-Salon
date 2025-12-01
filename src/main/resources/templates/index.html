@@ -36,13 +36,18 @@
             padding-left: 100%;
         }
 
+        .transparent-navbar .navbar
+        {
+            background-color: transparent !important;
+        }
+
 
         /*.animate-marquee:hover {
         /*    animation-play-state: paused;
         /*}
 </style>
 </head>
-<body class="min-h-screen bg-base-200">
+<body class="min-h-screen bg-base-200 transparent-navbar">
 <!--navbar-->
 <div class="absolute top-0 left-0 z-20 right-0 shadow-none border-none">
     <div th:replace="fragments/navbar::navbar"></div>
